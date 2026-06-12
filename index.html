@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NexCRM — Plataforma Inteligente</title>
+  <style>
+    :root {
+      --bg:       #06060f;
+      --bg2:      #0d0d1a;
+      --card:     rgba(255,255,255,0.04);
+      --border:   rgba(255,255,255,0.08);
+      --violet:   #7c3aed;
+      --cyan:     #06b6d4;
+      --pink:     #ec4899;
+      --green:    #10b981;
+      --orange:   #f59e0b;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --glow-v:   rgba(124,58,237,0.35);
+      --glow-c:   rgba(6,182,212,0.25);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── BACKGROUND BLOBS ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: .35;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { width: 600px; height: 600px; background: var(--violet); top: -200px; left: -200px; }
+    .blob-2 { width: 500px; height: 500px; background: var(--cyan);   bottom: -150px; right: -150px; }
+    .blob-3 { width: 350px; height: 350px; background: var(--pink);   top: 40%; left: 40%; }
+
+    /* ── LAYOUT ── */
+    .shell { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+    /* ── SIDEBAR ── */
+    aside {
+      width: 240px;
+      background: rgba(13,13,26,0.85);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      padding: 0 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--violet), var(--cyan));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 20px var(--glow-v);
+    }
+    .logo-text { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--cyan); }
+
+    nav { flex: 1; }
+    .nav-section { padding: 8px 16px 4px; font-size: .65rem; font-weight: 700;
+                   letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 24px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all .2s;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(124,58,237,.12);
+      border-left-color: var(--violet);
+      color: var(--text);
+    }
+    .nav-item.active { color: #fff; }
+    .nav-item .icon { font-size: 1.1rem; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+    }
+    .avatar-row { display: flex; align-items: center; gap: 10px; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--violet), var(--pink));
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700;
+    }
+    .avatar-info { flex: 1; }
+    .avatar-name { font-size: .85rem; font-weight: 600; }
+    .avatar-role { font-size: .7rem; color: var(--muted); }
+
+    /* ── MAIN ── */
+    main { flex: 1; padding: 32px 36px; overflow-y: auto; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 36px;
+    }
+    .page-title h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px; }
+    .page-title p  { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+
+    .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+    .search-box {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: .85rem; color: var(--muted);
+    }
+
+    .btn {
+      padding: 9px 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: .85rem;
+      font-weight: 600;
+      transition: all .2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--violet), #9333ea);
+      color: #fff;
+      box-shadow: 0 4px 20px var(--glow-v);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px var(--glow-v); }
+    .btn-ghost {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,.08); }
+
+    /* ── KPI CARDS ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 36px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.4); }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 3px;
+      background: var(--accent, var(--violet));
+    }
+
+    .kpi-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 14px;
+      background: var(--icon-bg, rgba(124,58,237,.15));
+    }
+    .kpi-value { font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; }
+    .kpi-label { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+    .kpi-trend {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .75rem; font-weight: 600;
+      margin-top: 8px;
+      padding: 3px 8px; border-radius: 20px;
+    }
+    .trend-up   { background: rgba(16,185,129,.15); color: var(--green); }
+    .trend-down { background: rgba(236,72,153,.15);  color: var(--pink); }
+
+    /* ── SECTION TITLE ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .section-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .badge {
+      font-size: .7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+      background: rgba(124,58,237,.2); color: #a78bfa;
+    }
+
+    /* ── MODULES GRID ── */
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 36px;
+    }
+
+    .module-card {
+      background: var(--card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 26px;
+      cursor: pointer;
+      transition: all .25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .module-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 70% 30%, var(--glow, transparent) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .module-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,.18); }
+    .module-card:hover::after { opacity: 1; }
+
+    .module-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .module-icon {
+      width: 52px; height: 52px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .module-status {
+      font-size: .68rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 20px; border: 1px solid;
+    }
+    .status-active { background: rgba(16,185,129,.1); color: var(--green); border-color: rgba(16,185,129,.3); }
+    .status-beta   { background: rgba(245,158,11,.1);  color: var(--orange); border-color: rgba(245,158,11,.3); }
+    .status-new    { background: rgba(6,182,212,.1);   color: var(--cyan);   border-color: rgba(6,182,212,.3); }
+
+    .module-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .module-desc { font-size: .82rem; color: var(--muted); line-height: 1.6; }
+
+    .module-stats {
+      display: flex; gap: 16px;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .mod-stat { flex: 1; }
+    .mod-stat-val { font-size: 1rem; font-weight: 700; }
+    .mod-stat-lbl { font-size: .7rem; color: var(--muted); }
+
+    .module-action {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 16px;
+      font-size: .82rem; font-weight: 600;
+      color: var(--cyan);
+      cursor: pointer;
+    }
+
+    /* ── BOTTOM ROW ── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+    }
+    .panel h3 { font-size: .95rem; font-weight: 700; margin-bottom: 16px; }
+
+    /* activity feed */
+    .activity-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .act-dot {
+      width: 32px; height: 32px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem; flex-shrink: 0; margin-top: 2px;
+    }
+    .act-text { flex: 1; }
+    .act-title { font-size: .85rem; font-weight: 600; }
+    .act-sub   { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+    .act-time  { font-size: .7rem; color: var(--muted); }
+
+    /* mini chart bars */
+    .chart-bars {
+      display: flex; align-items: flex-end; gap: 6px;
+      height: 80px; margin-bottom: 8px;
+    }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bar {
+      width: 100%; border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, var(--violet), var(--cyan));
+      transition: height .4s;
+      position: relative;
+    }
+    .bar.alt { background: linear-gradient(180deg, var(--pink), var(--orange)); }
+    .bar-lbl { font-size: .65rem; color: var(--muted); }
+
+    /* ── AI CHAT WIDGET ── */
+    .ai-widget {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      z-index: 100;
+    }
+    .ai-bubble {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--violet), var(--cyan));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      cursor: pointer;
+      box-shadow: 0 0 30px var(--glow-v), 0 4px 20px rgba(0,0,0,.5);
+      transition: transform .2s;
+      animation: pulse 2.5s infinite;
+    }
+    .ai-bubble:hover { transform: scale(1.1); }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 20px var(--glow-v); }
+      50%      { box-shadow: 0 0 40px var(--glow-v), 0 0 60px var(--glow-c); }
+    }
+
+    /* ── MINI CHART (CSS only) ── */
+    .sparkline {
+      display: flex; align-items: flex-end; gap: 3px; height: 32px; margin-top: 8px;
+    }
+    .spark { flex: 1; border-radius: 3px 3px 0 0; background: var(--violet); opacity: .5; }
+    .spark:last-child { opacity: 1; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1200px) {
+      .kpi-grid     { grid-template-columns: repeat(2,1fr); }
+      .modules-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 768px) {
+      aside { display: none; }
+      main  { padding: 20px 16px; }
+      .kpi-grid, .modules-grid, .bottom-grid { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+
+    /* ── GLOW LINE TOP ── */
+    .glow-bar {
+      height: 3px;
+      background: linear-gradient(90deg, var(--violet), var(--cyan), var(--pink));
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+<div class="glow-bar"></div>
+
+<!-- background blobs -->
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">Nex<span>CRM</span></div>
+    </div>
+
+    <nav>
+      <div class="nav-section">Principal</div>
+      <div class="nav-item active"><span class="icon">🏠</span> Dashboard</div>
+      <div class="nav-item"><span class="icon">👥</span> Clientes</div>
+      <div class="nav-item"><span class="icon">📊</span> Analytics</div>
+
+      <div class="nav-section">Ventas</div>
+      <div class="nav-item"><span class="icon">🛒</span> E-commerce</div>
+      <div class="nav-item"><span class="icon">🧾</span> Facturas</div>
+      <div class="nav-item"><span class="icon">💳</span> Pagos</div>
+
+      <div class="nav-section">Marketing</div>
+      <div class="nav-item"><span class="icon">📱</span> Redes Sociales</div>
+      <div class="nav-item"><span class="icon">🎯</span> Captación Leads</div>
+      <div class="nav-item"><span class="icon">📧</span> Email Marketing</div>
+
+      <div class="nav-section">Herramientas IA</div>
+      <div class="nav-item"><span class="icon">🤖</span> Chatbot IA</div>
+      <div class="nav-item"><span class="icon">⚙️</span> Configuración</div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar">AD</div>
+        <div class="avatar-info">
+          <div class="avatar-name">Admin</div>
+          <div class="avatar-role">Super Admin</div>
+        </div>
+        <span style="color:var(--muted);cursor:pointer">⋯</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main>
+
+    <!-- topbar -->
+    <div class="topbar">
+      <div class="page-title">
+        <h1>Dashboard Principal</h1>
+        <p>Bienvenido a tu plataforma de gestión inteligente · Junio 2026</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="search-box">🔍 <span>Buscar en NexCRM…</span></div>
+        <button class="btn btn-ghost">🔔</button>
+        <button class="btn btn-primary">+ Nuevo Lead</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+
+      <div class="kpi-card" style="--accent:var(--violet)">
+        <div class="kpi-icon" style="--icon-bg:rgba(124,58,237,.18)">👥</div>
+        <div class="kpi-value">4,823</div>
+        <div class="kpi-label">Clientes totales</div>
+        <div class="kpi-trend trend-up">▲ 12.4% este mes</div>
+        <div class="sparkline">
+          <div class="spark" style="height:40%"></div>
+          <div class="spark" style="height:55%"></div>
+          <div class="spark" style="height:45%"></div>
+          <div class="spark" style="height:70%"></div>
+          <div class="spark" style="height:60%"></div>
+          <div class="spark" style="height:85%"></div>
+          <div class="spark" style="height:100%"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card" style="--accent:var(--green)">
+        <div class="kpi-icon" style="--icon-bg:rgba(16,185,129,.18)">💰</div>
+        <div class="kpi-value">$38,540</div>
+        <div class="kpi-label">Ingresos del mes</div>
+        <div class="kpi-trend trend-up">▲ 23.1% vs anterior</div>
+        <div class="sparkline">
+          <div class="spark" style="height:50%;background:var(--green)"></div>
+          <div class="spark" style="height:65%;background:var(--green)"></div>
+          <div class="spark" style="height:55%;background:var(--green)"></div>
+          <div class="spark" style="height:80%;background:var(--green)"></div>
+          <div class="spark" style="height:75%;background:var(--green)"></div>
+          <div class="spark" style="height:90%;background:var(--green)"></div>
+          <div class="spark" style="height:100%;background:var(--green)"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card" style="--accent:var(--cyan)">
+        <div class="kpi-icon" style="--icon-bg:rgba(6,182,212,.18)">🎯</div>
+        <div class="kpi-value">1,247</div>
+        <div class="kpi-label">Leads captados</div>
+        <div class="kpi-trend trend-up">▲ 8.7% esta semana</div>
+        <div class="sparkline">
+          <div class="spark" style="height:60%;background:var(--cyan)"></div>
+          <div class="spark" style="height:40%;background:var(--cyan)"></div>
+          <div class="spark" style="height:75%;background:var(--cyan)"></div>
+          <div class="spark" style="height:55%;background:var(--cyan)"></div>
+          <div class="spark" style="height:85%;background:var(--cyan)"></div>
+          <div class="spark" style="height:70%;background:var(--cyan)"></div>
+          <div class="spark" style="height:100%;background:var(--cyan)"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card" style="--accent:var(--pink)">
+        <div class="kpi-icon" style="--icon-bg:rgba(236,72,153,.18)">📦</div>
+        <div class="kpi-value">892</div>
+        <div class="kpi-label">Ventas digitales</div>
+        <div class="kpi-trend trend-down">▼ 2.3% ayer</div>
+        <div class="sparkline">
+          <div class="spark" style="height:80%;background:var(--pink)"></div>
+          <div class="spark" style="height:90%;background:var(--pink)"></div>
+          <div class="spark" style="height:70%;background:var(--pink)"></div>
+          <div class="spark" style="height:95%;background:var(--pink)"></div>
+          <div class="spark" style="height:60%;background:var(--pink)"></div>
+          <div class="spark" style="height:75%;background:var(--pink)"></div>
+          <div class="spark" style="height:65%;background:var(--pink)"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MÓDULOS -->
+    <div class="section-header">
+      <h2>Módulos del Sistema</h2>
+      <span class="badge">7 activos</span>
+    </div>
+
+    <div class="modules-grid">
+
+      <!-- 1 Gestión Clientes -->
+      <div class="module-card" style="--glow:rgba(124,58,237,.2)">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(124,58,237,.2)">👥</div>
+          <span class="module-status status-active">Activo</span>
+        </div>
+        <div class="module-name">Gestión de Clientes</div>
+        <div class="module-desc">Ficha completa de cada cliente: historial, compras, interacciones, etiquetas y segmentos automáticos por comportamiento.</div>
+        <div class="module-stats">
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--violet)">4,823</div><div class="mod-stat-lbl">Clientes</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--violet)">98.2%</div><div class="mod-stat-lbl">Retención</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--violet)">24</div><div class="mod-stat-lbl">Segmentos</div></div>
+        </div>
+        <div class="module-action">Ver clientes →</div>
+      </div>
+
+      <!-- 2 E-commerce -->
+      <div class="module-card" style="--glow:rgba(16,185,129,.2)">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(16,185,129,.2)">🛒</div>
+          <span class="module-status status-active">Activo</span>
+        </div>
+        <div class="module-name">E-commerce Digital</div>
+        <div class="module-desc">Vende cursos, plantillas, software, membresías y cualquier producto digital. Entrega automática, licencias y upsells integrados.</div>
+        <div class="module-stats">
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--green)">156</div><div class="mod-stat-lbl">Productos</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--green)">$38.5k</div><div class="mod-stat-lbl">Ingresos</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--green)">4.8★</div><div class="mod-stat-lbl">Rating</div></div>
+        </div>
+        <div class="module-action" style="color:var(--green)">Ver tienda →</div>
+      </div>
+
+      <!-- 3 Redes Sociales & Leads -->
+      <div class="module-card" style="--glow:rgba(236,72,153,.2)">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(236,72,153,.2)">📱</div>
+          <span class="module-status status-active">Activo</span>
+        </div>
+        <div class="module-name">Redes Sociales & Leads</div>
+        <div class="module-desc">Conecta Instagram, TikTok, LinkedIn y Facebook. Captura leads automáticamente desde DMs, comentarios y anuncios directamente al CRM.</div>
+        <div class="module-stats">
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--pink)">5</div><div class="mod-stat-lbl">Redes</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--pink)">1,247</div><div class="mod-stat-lbl">Leads/mes</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--pink)">34%</div><div class="mod-stat-lbl">Conversión</div></div>
+        </div>
+        <div class="module-action" style="color:var(--pink)">Ver leads →</div>
+      </div>
+
+      <!-- 4 Email Marketing -->
+      <div class="module-card" style="--glow:rgba(245,158,11,.2)">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(245,158,11,.2)">📧</div>
+          <span class="module-status status-active">Activo</span>
+        </div>
+        <div class="module-name">Email Marketing</div>
+        <div class="module-desc">Secuencias automatizadas, campañas segmentadas, A/B testing, plantillas drag-and-drop y análisis de apertura en tiempo real.</div>
+        <div class="module-stats">
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--orange)">48k</div><div class="mod-stat-lbl">Suscriptores</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--orange)">42%</div><div class="mod-stat-lbl">Apertura</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--orange)">12</div><div class="mod-stat-lbl">Secuencias</div></div>
+        </div>
+        <div class="module-action" style="color:var(--orange)">Ver campañas →</div>
+      </div>
+
+      <!-- 5 Chatbot IA -->
+      <div class="module-card" style="--glow:rgba(6,182,212,.2)">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(6,182,212,.2)">🤖</div>
+          <span class="module-status status-new">Nuevo</span>
+        </div>
+        <div class="module-name">Chatbot & IA Integrada</div>
+        <div class="module-desc">Asistente IA 24/7 que califica leads, responde consultas, agenda citas y nutre prospectos automáticamente via web, WhatsApp e Instagram.</div>
+        <div class="module-stats">
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--cyan)">2,840</div><div class="mod-stat-lbl">Chats/mes</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--cyan)">94%</div><div class="mod-stat-lbl">Resueltos</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:var(--cyan)">1.2s</div><div class="mod-stat-lbl">Respuesta</div></div>
+        </div>
+        <div class="module-action" style="color:var(--cyan)">Configurar IA →</div>
+      </div>
+
+      <!-- 6 Facturación & Pagos -->
+      <div class="module-card" style="--glow:rgba(99,102,241,.2)">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(99,102,241,.2)">💳</div>
+          <span class="module-status status-beta">Beta</span>
+        </div>
+        <div class="module-name">Facturación & Pagos</div>
+        <div class="module-desc">Genera facturas electrónicas, gestiona suscripciones recurrentes, integra Stripe, PayPal y criptomonedas. Cobros automáticos y recordatorios.</div>
+        <div class="module-stats">
+          <div class="mod-stat"><div class="mod-stat-val" style="color:#818cf8">347</div><div class="mod-stat-lbl">Facturas</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:#818cf8">$12.3k</div><div class="mod-stat-lbl">Pendiente</div></div>
+          <div class="mod-stat"><div class="mod-stat-val" style="color:#818cf8">3</div><div class="mod-stat-lbl">Pasarelas</div></div>
+        </div>
+        <div class="module-action" style="color:#818cf8">Ver finanzas →</div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="bottom-grid">
+
+      <!-- Actividad reciente -->
+      <div class="panel">
+        <h3>⚡ Actividad Reciente</h3>
+
+        <div class="activity-item">
+          <div class="act-dot" style="background:rgba(16,185,129,.15)">💰</div>
+          <div class="act-text">
+            <div class="act-title">Nueva venta · Curso de Marketing IA</div>
+            <div class="act-sub">Carlos Martínez · $297 USD</div>
+          </div>
+          <div class="act-time">hace 2m</div>
+        </div>
+
+        <div class="activity-item">
+          <div class="act-dot" style="background:rgba(236,72,153,.15)">🎯</div>
+          <div class="act-text">
+            <div class="act-title">Lead captado desde Instagram</div>
+            <div class="act-sub">Ana López · interés en plan Pro</div>
+          </div>
+          <div class="act-time">hace 8m</div>
+        </div>
+
+        <div class="activity-item">
+          <div class="act-dot" style="background:rgba(6,182,212,.15)">🤖</div>
+          <div class="act-text">
+            <div class="act-title">Chatbot calificó 14 leads nuevos</div>
+            <div class="act-sub">Canal: WhatsApp Business</div>
+          </div>
+          <div class="act-time">hace 15m</div>
+        </div>
+
+        <div class="activity-item">
+          <div class="act-dot" style="background:rgba(245,158,11,.15)">📧</div>
+          <div class="act-text">
+            <div class="act-title">Campaña email enviada</div>
+            <div class="act-sub">Secuencia bienvenida · 2,340 contactos</div>
+          </div>
+          <div class="act-time">hace 32m</div>
+        </div>
+
+        <div class="activity-item">
+          <div class="act-dot" style="background:rgba(124,58,237,.15)">👥</div>
+          <div class="act-text">
+            <div class="act-title">Cliente actualizado a plan Enterprise</div>
+            <div class="act-sub">TechCorp S.L. · MRR +$499</div>
+          </div>
+          <div class="act-time">hace 1h</div>
+        </div>
+
+      </div>
+
+      <!-- Mini analytics -->
+      <div class="panel">
+        <h3>📊 Ingresos por canal · Junio</h3>
+        <div class="chart-bars">
+          <div class="bar-col"><div class="bar" style="height:55%"></div><div class="bar-lbl">Web</div></div>
+          <div class="bar-col"><div class="bar alt" style="height:40%"></div><div class="bar-lbl">Inst</div></div>
+          <div class="bar-col"><div class="bar" style="height:75%"></div><div class="bar-lbl">Email</div></div>
+          <div class="bar-col"><div class="bar alt" style="height:60%"></div><div class="bar-lbl">TikTok</div></div>
+          <div class="bar-col"><div class="bar" style="height:90%"></div><div class="bar-lbl">SEO</div></div>
+          <div class="bar-col"><div class="bar alt" style="height:50%"></div><div class="bar-lbl">WA</div></div>
+          <div class="bar-col"><div class="bar" style="height:65%"></div><div class="bar-lbl">LI</div></div>
+        </div>
+
+        <div style="display:flex;gap:24px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+          <div>
+            <div style="font-size:1.3rem;font-weight:800;color:var(--violet)">$38,540</div>
+            <div style="font-size:.75rem;color:var(--muted)">Total del mes</div>
+          </div>
+          <div>
+            <div style="font-size:1.3rem;font-weight:800;color:var(--cyan)">$51,200</div>
+            <div style="font-size:.75rem;color:var(--muted)">Proyección</div>
+          </div>
+          <div>
+            <div style="font-size:1.3rem;font-weight:800;color:var(--green)">+23%</div>
+            <div style="font-size:.75rem;color:var(--muted)">vs. mes anterior</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;margin-top:20px;padding:12px">
+          Ver reporte completo →
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- AI Widget -->
+<div class="ai-widget">
+  <div class="ai-bubble" title="Asistente NexCRM IA">🤖</div>
+</div>
+
+</body>
+</html>
