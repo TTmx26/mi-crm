@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Vibe CRM — Design tokens
+   Fuente de verdad: design/design.md — no cambiar nombres sin
+   actualizar ese documento también.
+   ============================================================ */
+:root {
+  color-scheme: light;
+
+  /* ---- Escalas crudas (uso: construir semánticos o gráficos) ---- */
+  --green-50: #F0FDF4;
+  --green-100: #DCFCE7;
+  --green-200: #BBF7D0;
+  --green-300: #86EFAC;
+  --green-400: #4ADE80;
+  --green-500: #22C55E;
+  --green-600: #16A34A;
+  --green-700: #15803D;
+  --green-800: #166534;
+  --green-900: #14532D;
+  --green-950: #052E16;
+
+  --neutral-0: #FFFFFF;
+  --neutral-50: #F7F8F9;
+  --neutral-100: #F1F2F4;
+  --neutral-200: #E8EAED;
+  --neutral-300: #D8DBDF;
+  --neutral-400: #B0B5BC;
+  --neutral-500: #868D96;
+  --neutral-600: #656C75;
+  --neutral-700: #4A5159;
+  --neutral-800: #2E3338;
+  --neutral-900: #1A1D21;
+  --neutral-950: #0E0F11;
+
+  /* ---- Semántico: primario ---- */
+  --color-primary: #16A34A;
+  --color-primary-hover: #15803D;
+  --color-primary-active: #166534;
+  --color-primary-subtle: #F0FDF4;
+  --color-on-primary: #FFFFFF;
+
+  /* ---- Semántico: superficies y texto ---- */
+  --color-bg: #F7F8F9;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F1F2F4;
+  --color-border: #E8EAED;
+  --color-border-strong: #D8DBDF;
+  --color-text: #1A1D21;
+  --color-text-muted: #656C75;
+  --color-text-subtle: #868D96;
+  --color-focus: #16A34A;
+
+  /* ---- Semántico: estado (fg / bg / text) ---- */
+  --color-success: #15803D;
+  --color-success-bg: #ECFDF3;
+  --color-success-text: #166534;
+  --color-warning: #B45309;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-text: #92400E;
+  --color-error: #DC2626;
+  --color-error-bg: #FEF2F2;
+  --color-error-text: #991B1B;
+  --color-info: #2563EB;
+  --color-info-bg: #EFF6FF;
+  --color-info-text: #1E40AF;
+
+  /* ---- Layout / forma ---- */
+  --content-max: 1200px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 16px;
+
+  /* ---- Densidad ---- */
+  --control-h: 48px;
+  --control-h-compact: 44px;
+  --touch-min: 44px;
+
+  /* ---- Movimiento ---- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 150ms;
+
+  /* ---- Sombras (muy sutiles) ---- */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 32, .04);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 32, .06), 0 1px 3px rgba(16, 24, 32, .05);
+  --shadow-md: 0 2px 4px rgba(16, 24, 32, .05), 0 4px 12px rgba(16, 24, 32, .06);
+  --shadow-lg: 0 8px 24px rgba(16, 24, 32, .10);
+  --focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-focus);
+}
+
+/* Modo oscuro: opt-in vía data-theme="dark" en <html> (no automático por prefers-color-scheme) */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary: #22C55E;
+  --color-primary-hover: #4ADE80;
+  --color-primary-active: #86EFAC;
+  --color-primary-subtle: rgba(34, 197, 94, .14);
+  --color-on-primary: #052E16;
+
+  --color-bg: #0E0F11;
+  --color-surface: #16181B;
+  --color-surface-2: #1C1F23;
+  --color-border: #2A2E33;
+  --color-border-strong: #3A3F45;
+  --color-text: #ECEDEE;
+  --color-text-muted: #9BA1A8;
+  --color-text-subtle: #71777E;
+  --color-focus: #4ADE80;
+
+  --color-success: #4ADE80;
+  --color-success-bg: rgba(34, 197, 94, .14);
+  --color-success-text: #86EFAC;
+  --color-warning: #FBBF24;
+  --color-warning-bg: rgba(217, 119, 6, .16);
+  --color-warning-text: #FCD34D;
+  --color-error: #F87171;
+  --color-error-bg: rgba(220, 38, 38, .16);
+  --color-error-text: #FCA5A5;
+  --color-info: #60A5FA;
+  --color-info-bg: rgba(37, 99, 235, .18);
+  --color-info-text: #93C5FD;
+}
+
+/* ============================================================
+   Puente hacia Tailwind v4: expone los tokens de arriba como
+   utilidades (bg-primary, text-text-muted, rounded-xl, shadow-md...).
+   "inline" mantiene la referencia var(...) viva en runtime, así
+   el cambio de [data-theme="dark"] recolorea sin recompilar CSS.
+   ============================================================ */
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-active: var(--color-primary-active);
+  --color-primary-subtle: var(--color-primary-subtle);
+  --color-on-primary: var(--color-on-primary);
+
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-subtle: var(--color-text-subtle);
+  --color-focus: var(--color-focus);
+
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-success-text: var(--color-success-text);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-warning-text: var(--color-warning-text);
+  --color-error: var(--color-error);
+  --color-error-bg: var(--color-error-bg);
+  --color-error-text: var(--color-error-text);
+  --color-info: var(--color-info);
+  --color-info-bg: var(--color-info-bg);
+  --color-info-text: var(--color-info-text);
+
+  /* Escalas crudas, disponibles para gráficos (bg-green-600, etc.) */
+  --color-green-50: var(--green-50);
+  --color-green-100: var(--green-100);
+  --color-green-200: var(--green-200);
+  --color-green-300: var(--green-300);
+  --color-green-400: var(--green-400);
+  --color-green-500: var(--green-500);
+  --color-green-600: var(--green-600);
+  --color-green-700: var(--green-700);
+  --color-green-800: var(--green-800);
+  --color-green-900: var(--green-900);
+  --color-green-950: var(--green-950);
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    letter-spacing: -0.011em;
+    color: var(--color-text);
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 {
+    line-height: 1.2;
+    letter-spacing: -0.011em;
+  }
+}
+
+/* Cifras/importes: mono tabular alineado a la derecha */
+.tnum,
+[data-mono] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Anillo de foco verde con separación (usar sobre --color-surface) */
+.focus-ring,
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@keyframes vibe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vibe-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .45;
+  }
+}
+
+@keyframes vibe-slide-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
