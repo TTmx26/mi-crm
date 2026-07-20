@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { visibleNavItems } from "@/components/layout/nav-items";
-import { getCurrentUser } from "@/lib/mock-session";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { Avatar } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const user = getCurrentUser();
-  const items = visibleNavItems(user.role);
+  const user = useCurrentUser();
+  const items = visibleNavItems(user?.role);
 
   return (
     <aside
@@ -49,13 +50,27 @@ export function Sidebar() {
         href="/cuenta"
         className="mx-3 mb-4 flex items-center gap-3 rounded-md p-2 text-left hover:bg-surface-2"
       >
-        <Avatar name={user.name} />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-text">{user.name}</p>
-          <p className="truncate text-[13px] text-text-muted">
-            {user.role === "propietaria" ? "Dueña" : "Atiende y vende"}
-          </p>
-        </div>
+        {user === undefined ? (
+          <>
+            <Skeleton className="size-10 rounded-full" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3.5 w-16" />
+            </div>
+          </>
+        ) : (
+          user && (
+            <>
+              <Avatar name={user.name} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-text">{user.name}</p>
+                <p className="truncate text-[13px] text-text-muted">
+                  {user.role === "propietaria" ? "Dueña" : "Atiende y vende"}
+                </p>
+              </div>
+            </>
+          )
+        )}
       </Link>
     </aside>
   );

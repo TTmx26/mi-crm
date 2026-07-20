@@ -1,16 +1,28 @@
+"use client";
+
 import { ShieldAlert, Plus, UsersRound } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { getCurrentUser } from "@/lib/mock-session";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
-// TODO(convex): reemplazar por `useQuery(api.usuarios.listar)` y comprobar
-// `session.user.role === 'propietaria'` con la sesión real (Convex Auth).
+// TODO(convex): reemplazar por `useQuery(api.usuarios.listar)` cuando exista
+// un panel de administración de usuarios (HOP-14).
 export default function EquipoPage() {
-  const user = getCurrentUser();
+  const user = useCurrentUser();
 
-  if (user.role !== "propietaria") {
+  if (user === undefined) {
+    return (
+      <div>
+        <PageHeader title="Equipo" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
+  if (user?.role !== "propietaria") {
     return (
       <Card className="p-0">
         <EmptyState

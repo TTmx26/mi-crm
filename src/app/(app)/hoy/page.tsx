@@ -9,11 +9,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SeguimientoRow, type SeguimientoBucket } from "@/components/ui/seguimiento-row";
-import { getCurrentUser } from "@/lib/mock-session";
 import { cn } from "@/lib/utils";
 import { UndoToast } from "./_components/undo-toast";
 import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 import type { SeguimientoParaHoy } from "../../../../convex/seguimientos";
 
 const quickActions = [
@@ -54,8 +52,7 @@ export default function HoyPage() {
   // (a diferencia de llamarlo directamente en el cuerpo del render).
   const [hoyISO] = useState<string>(() => todayISO());
 
-  const responsableId = getCurrentUser().id as Id<"users">;
-  const queryArgs = { responsableId, hoy: hoyISO };
+  const queryArgs = { hoy: hoyISO };
 
   const data = useQuery(api.seguimientos.paraHoy, queryArgs);
 
@@ -94,7 +91,7 @@ export default function HoyPage() {
 
   function handleDone(item: SeguimientoParaHoy, seccion: SeccionKey) {
     setPendingUndo({ item, seccion });
-    void marcarHecho({ id: item._id, responsableId });
+    void marcarHecho({ id: item._id });
 
     clearTimeout(undoTimerRef.current);
     undoTimerRef.current = setTimeout(() => setPendingUndo(null), 3800);
@@ -102,7 +99,7 @@ export default function HoyPage() {
 
   function handleUndo() {
     if (!pendingUndo) return;
-    void deshacerHecho({ id: pendingUndo.item._id, responsableId });
+    void deshacerHecho({ id: pendingUndo.item._id });
     setPendingUndo(null);
     clearTimeout(undoTimerRef.current);
   }

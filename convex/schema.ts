@@ -1,12 +1,24 @@
 import { defineSchema, defineTable } from "convex/server";
+import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  ...authTables, // authSessions, authAccounts, authRefreshTokens, etc. — no tocar
+
+  // `name`/`email`/`role` se quedan obligatorios (a diferencia de la receta
+  // genérica de authTables): no hay OAuth ni cuentas anónimas, así que exigir
+  // `role` es una segunda barrera gratuita contra cualquier alta que no pase
+  // por nuestro flujo (ver el guard en convex/auth.ts).
   users: defineTable({
     name: v.string(),
     email: v.string(),
     role: v.union(v.literal("propietaria"), v.literal("comercial")),
-  }).index("by_email", ["email"]),
+    image: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+  }).index("email", ["email"]), // nombre exigido por createAccount({shouldLinkViaEmail: true})
 
   clientes: defineTable({
     nombre: v.string(),

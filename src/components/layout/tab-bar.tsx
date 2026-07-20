@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { visibleNavItems } from "@/components/layout/nav-items";
-import { getCurrentUser } from "@/lib/mock-session";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export function TabBar() {
   const pathname = usePathname();
-  const items = visibleNavItems(getCurrentUser().role);
+  const user = useCurrentUser();
+  const items = visibleNavItems(user?.role);
 
   return (
     <nav

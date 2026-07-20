@@ -8,8 +8,13 @@
  * @module
  */
 
+import type * as ResendOTPPasswordReset from "../ResendOTPPasswordReset.js";
+import type * as auth from "../auth.js";
+import type * as bootstrap from "../bootstrap.js";
+import type * as http from "../http.js";
 import type * as seed from "../seed.js";
 import type * as seguimientos from "../seguimientos.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -18,8 +23,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  ResendOTPPasswordReset: typeof ResendOTPPasswordReset;
+  auth: typeof auth;
+  bootstrap: typeof bootstrap;
+  http: typeof http;
   seed: typeof seed;
   seguimientos: typeof seguimientos;
+  users: typeof users;
 }>;
 
 /**

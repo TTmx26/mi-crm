@@ -14,7 +14,7 @@ async function upsertUser(
 ): Promise<Id<"users">> {
   const existing = await ctx.db
     .query("users")
-    .withIndex("by_email", (q) => q.eq("email", user.email))
+    .withIndex("email", (q) => q.eq("email", user.email))
     .unique();
   return existing?._id ?? (await ctx.db.insert("users", user));
 }
@@ -48,6 +48,24 @@ async function upsertSeguimiento(
   await ctx.db.insert("seguimientos", { ...seguimiento, hecho: false });
 }
 
+// Migración de un solo uso: la Marta ya sembrada en dev tiene el email falso
+// original. La renombra in situ (mismo _id, no rompe los seguimientos que ya
+// apuntan a ella) para que upsertUser la encuentre por el email real a partir
+// de ahora. No-op si ya se migró o si no existe (p.ej. en prod, que arranca
+// vacío y nunca tuvo el email falso).
+export const migrateMartaEmail = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const old = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", "marta@vibecrm.test"))
+      .unique();
+    if (old) {
+      await ctx.db.patch("users", old._id, { email: "hoplon26@protonmail.com" });
+    }
+  },
+});
+
 // Idempotente: re-ejecutarlo no duplica users/clientes/seguimientos (se
 // buscan por email/nombre/accion antes de insertar), así que el _id de Marta
 // que usa `mock-session.ts` se mantiene estable entre ejecuciones mientras no
@@ -57,7 +75,7 @@ export const seedDemo = internalMutation({
   handler: async (ctx) => {
     const martaId = await upsertUser(ctx, {
       name: "Marta García",
-      email: "marta@vibecrm.test",
+      email: "hoplon26@protonmail.com",
       role: "propietaria",
     });
     const carlosId = await upsertUser(ctx, {

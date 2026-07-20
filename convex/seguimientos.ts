@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc, Id } from "./_generated/dataModel";
 
 export interface SeguimientoParaHoy {
@@ -41,10 +42,14 @@ function fechaNegocioHoy(): string {
 
 export const paraHoy = query({
   args: {
-    responsableId: v.id("users"),
     hoy: v.string(),
   },
-  handler: async (ctx, { responsableId, hoy }): Promise<ParaHoyResult> => {
+  handler: async (ctx, { hoy }): Promise<ParaHoyResult> => {
+    const responsableId = await getAuthUserId(ctx);
+    if (responsableId === null) {
+      throw new Error("No autenticado");
+    }
+
     const pendientes = await ctx.db
       .query("seguimientos")
       .withIndex("by_responsable_estado_vence", (q) =>
@@ -80,14 +85,16 @@ export const paraHoy = query({
   },
 });
 
-// `responsableId` viene del cliente (mock-session, sin auth real) igual que en
-// `paraHoy` — comprobar que coincide con el dueño del seguimiento no es
-// autorización real (el propio caller declara quién es), pero cierra el hueco
-// más burdo: sin esto, cualquier `id` válido podía marcarse/deshacerse sin
-// declarar ser su responsable en absoluto.
+// El responsable ya no viene del cliente (a diferencia de antes): se deriva
+// de la sesión autenticada server-side. Esto cierra el hallazgo de la
+// auditoría — ya no es posible marcar/deshacer seguimientos ajenos
+// declarando un responsableId cualquiera, porque ya no se acepta como
+// argumento en absoluto.
 export const marcarHecho = mutation({
-  args: { id: v.id("seguimientos"), responsableId: v.id("users") },
-  handler: async (ctx, { id, responsableId }) => {
+  args: { id: v.id("seguimientos") },
+  handler: async (ctx, { id }) => {
+    const responsableId = await getAuthUserId(ctx);
+    if (responsableId === null) return;
     const seguimiento = await ctx.db.get("seguimientos", id);
     if (!seguimiento || seguimiento.responsableId !== responsableId || seguimiento.hecho) return;
     // Fecha del servidor, no la que mande el cliente: `fechaHecho` es un dato
@@ -97,8 +104,10 @@ export const marcarHecho = mutation({
 });
 
 export const deshacerHecho = mutation({
-  args: { id: v.id("seguimientos"), responsableId: v.id("users") },
-  handler: async (ctx, { id, responsableId }) => {
+  args: { id: v.id("seguimientos") },
+  handler: async (ctx, { id }) => {
+    const responsableId = await getAuthUserId(ctx);
+    if (responsableId === null) return;
     const seguimiento = await ctx.db.get("seguimientos", id);
     if (!seguimiento || seguimiento.responsableId !== responsableId || !seguimiento.hecho) return;
     await ctx.db.patch("seguimientos", id, { hecho: false, fechaHecho: undefined });

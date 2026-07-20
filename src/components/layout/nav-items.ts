@@ -1,5 +1,7 @@
 import { ListChecks, Users, TrendingUp, UserCog } from "lucide-react";
-import type { UserRole } from "@/lib/mock-session";
+import type { Doc } from "../../../convex/_generated/dataModel";
+
+export type UserRole = Doc<"users">["role"];
 
 export interface NavItem {
   href: string;
@@ -15,6 +17,8 @@ export const navItems: NavItem[] = [
   { href: "/equipo", label: "Equipo", icon: UserCog, requiresRole: "propietaria" },
 ];
 
-export function visibleNavItems(role: UserRole): NavItem[] {
+// `role` es null/undefined mientras la sesión carga o si no hay usuario —
+// en ambos casos, fail-closed: no se muestran los items restringidos.
+export function visibleNavItems(role: UserRole | null | undefined): NavItem[] {
   return navItems.filter((item) => !item.requiresRole || item.requiresRole === role);
 }
