@@ -12,3 +12,5 @@ export { Skeleton } from "./skeleton";
 export { EmptyState } from "./empty-state";
 export { SeguimientoRow } from "./seguimiento-row";
 export type { SeguimientoRowProps, SeguimientoBucket } from "./seguimiento-row";
+export { Sheet } from "./sheet";
+export type { SheetProps } from "./sheet";

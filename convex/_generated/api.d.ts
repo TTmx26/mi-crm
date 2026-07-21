@@ -11,6 +11,7 @@
 import type * as ResendOTPPasswordReset from "../ResendOTPPasswordReset.js";
 import type * as auth from "../auth.js";
 import type * as bootstrap from "../bootstrap.js";
+import type * as clientes from "../clientes.js";
 import type * as http from "../http.js";
 import type * as seed from "../seed.js";
 import type * as seguimientos from "../seguimientos.js";
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   ResendOTPPasswordReset: typeof ResendOTPPasswordReset;
   auth: typeof auth;
   bootstrap: typeof bootstrap;
+  clientes: typeof clientes;
   http: typeof http;
   seed: typeof seed;
   seguimientos: typeof seguimientos;

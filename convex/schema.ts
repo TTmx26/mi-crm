@@ -39,6 +39,7 @@ export default defineSchema({
     nota: v.optional(v.string()),
     // Denormalizado para ordenar/leer rápido la lista sin agregar interacciones.
     ultimoContactoEn: v.optional(v.string()),
+    prioridad: v.optional(v.union(v.literal("alta"), v.literal("media"), v.literal("baja"))),
   }).index("by_nombre", ["nombre"]),
 
   seguimientos: defineTable({
