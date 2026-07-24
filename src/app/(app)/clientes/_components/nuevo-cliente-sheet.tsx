@@ -7,18 +7,10 @@ import { Sheet } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CLIENTE_PRIORIDAD_LABEL, type ClientePrioridad } from "@/lib/cliente-prioridad";
+import { CLIENTE_CANAL_LABEL, CLIENTE_CANALES, type ClienteCanalOrigen } from "@/lib/cliente-canal";
 import { cn } from "@/lib/utils";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
-
-type CanalOrigen = "web" | "redes" | "email" | "whatsapp";
-
-const CANALES: { value: CanalOrigen; label: string }[] = [
-  { value: "web", label: "Web" },
-  { value: "redes", label: "Redes" },
-  { value: "email", label: "Email" },
-  { value: "whatsapp", label: "WhatsApp" },
-];
 
 const PRIORIDADES: ClientePrioridad[] = ["alta", "media", "baja"];
 
@@ -44,7 +36,7 @@ export function NuevoClienteSheet({ open, onClose, onCreated }: NuevoClienteShee
   const [empresa, setEmpresa] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
-  const [canalOrigen, setCanalOrigen] = useState<CanalOrigen | null>(null);
+  const [canalOrigen, setCanalOrigen] = useState<ClienteCanalOrigen | null>(null);
   const [prioridad, setPrioridad] = useState<ClientePrioridad | null>(null);
   const [nota, setNota] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -134,7 +126,7 @@ export function NuevoClienteSheet({ open, onClose, onCreated }: NuevoClienteShee
         <div>
           <p className="mb-2 text-sm font-medium text-text">Canal de origen</p>
           <div className="flex flex-wrap gap-2">
-            {CANALES.map(({ value, label }) => (
+            {CLIENTE_CANALES.map((value) => (
               <button
                 key={value}
                 type="button"
@@ -146,7 +138,7 @@ export function NuevoClienteSheet({ open, onClose, onCreated }: NuevoClienteShee
                     : "border-border-strong bg-surface text-text-muted hover:bg-surface-2",
                 )}
               >
-                {label}
+                {CLIENTE_CANAL_LABEL[value]}
               </button>
             ))}
           </div>
