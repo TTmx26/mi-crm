@@ -14,15 +14,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CLIENTE_ESTADO_LABEL, CLIENTE_ESTADO_BADGE_VARIANT } from "@/lib/cliente-estado";
 import { CLIENTE_PRIORIDAD_LABEL, CLIENTE_PRIORIDAD_BADGE_VARIANT } from "@/lib/cliente-prioridad";
 import { CLIENTE_CANAL_LABEL } from "@/lib/cliente-canal";
+import { INTERACCION_TIPO_LABEL, INTERACCION_TIPO_ICON } from "@/lib/interaccion-tipo";
 import { EditarClienteSheet } from "./_components/editar-cliente-sheet";
+import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
 import { api } from "../../../../../convex/_generated/api";
 
 const FORMATO_FECHA_ALTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" });
+const FORMATO_FECHA_CORTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
 
 export default function ClienteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const cliente = useQuery(api.clientes.obtener, { id });
   const [editOpen, setEditOpen] = useState(false);
+  const [interaccionOpen, setInteraccionOpen] = useState(false);
+  const interacciones = useQuery(
+    api.interacciones.listarPorCliente,
+    cliente ? { clienteId: cliente._id } : "skip",
+  );
 
   if (cliente === null) {
     notFound();
@@ -120,7 +128,11 @@ export default function ClienteDetailPage() {
       )}
 
       <div className="mb-4 grid gap-3 md:grid-cols-3">
-        <Button variant="secondary" className="justify-start">
+        <Button
+          variant="secondary"
+          className="justify-start"
+          onClick={() => setInteraccionOpen(true)}
+        >
           <MessageSquarePlus size={18} strokeWidth={1.5} aria-hidden />
           Anotar interacción
         </Button>
@@ -143,17 +155,59 @@ export default function ClienteDetailPage() {
 
       <Card>
         <CardHeader title="Historial" />
-        <CardBody>
-          <EmptyState
-            icon={<History size={24} strokeWidth={1.5} aria-hidden />}
-            title="Sin actividad todavía"
-            helperText="Las interacciones, ventas y seguimientos completados aparecerán aquí."
-          />
+        <CardBody className={interacciones && interacciones.length > 0 ? "p-0" : undefined}>
+          {interacciones === undefined ? (
+            <div className="flex flex-col gap-3 p-5">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+            </div>
+          ) : interacciones.length === 0 ? (
+            <EmptyState
+              icon={<History size={24} strokeWidth={1.5} aria-hidden />}
+              title="Sin actividad todavía"
+              helperText="Las interacciones, ventas y seguimientos completados aparecerán aquí."
+            />
+          ) : (
+            <div className="flex flex-col divide-y divide-border">
+              {interacciones.map((i) => {
+                const Icon = INTERACCION_TIPO_ICON[i.tipo];
+                return (
+                  <div key={i._id} className="flex gap-3 p-4">
+                    <Icon
+                      size={18}
+                      strokeWidth={1.5}
+                      className="mt-0.5 shrink-0 text-text-subtle"
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-text">
+                          {INTERACCION_TIPO_LABEL[i.tipo]}
+                        </span>
+                        <span className="shrink-0 text-[13px] text-text-subtle">
+                          {FORMATO_FECHA_CORTA.format(new Date(`${i.fecha}T00:00:00`))}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-sm text-text-muted">{i.texto}</p>
+                      <p className="mt-1 text-[13px] text-text-subtle">Por {i.autorNombre}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardBody>
       </Card>
 
       {cliente && (
-        <EditarClienteSheet open={editOpen} onClose={() => setEditOpen(false)} cliente={cliente} />
+        <>
+          <EditarClienteSheet open={editOpen} onClose={() => setEditOpen(false)} cliente={cliente} />
+          <AnotarInteraccionSheet
+            open={interaccionOpen}
+            onClose={() => setInteraccionOpen(false)}
+            clienteId={cliente._id}
+          />
+        </>
       )}
     </div>
   );

@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SeguimientoRow, type SeguimientoBucket } from "@/components/ui/seguimiento-row";
 import { cn } from "@/lib/utils";
 import { UndoToast } from "./_components/undo-toast";
+import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
+import { todayISO } from "@/lib/date";
 import { api } from "../../../../convex/_generated/api";
 import type { SeguimientoParaHoy } from "../../../../convex/seguimientos";
 
@@ -40,12 +42,6 @@ interface PendingUndo {
   seccion: SeccionKey;
 }
 
-function todayISO(): string {
-  // Fecha local (no UTC): evita el desfase de hasta 2h entre la hora de Madrid
-  // y la de Convex, que movería items entre Atrasados/Para hoy/Próximas.
-  return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
-
 export default function HoyPage() {
   // Inicializador perezoso de useState: se evalúa una sola vez al montar, la
   // excepción explícita que las reglas de pureza de React permiten para esto
@@ -56,6 +52,7 @@ export default function HoyPage() {
 
   const data = useQuery(api.seguimientos.paraHoy, queryArgs);
 
+  const [interaccionOpen, setInteraccionOpen] = useState(false);
   const [pendingUndo, setPendingUndo] = useState<PendingUndo | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -121,6 +118,7 @@ export default function HoyPage() {
           <button
             key={label}
             type="button"
+            onClick={label === "Anotar interacción" ? () => setInteraccionOpen(true) : undefined}
             className="flex flex-col items-center gap-2 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition-colors duration-[150ms] hover:bg-surface-2"
           >
             <span
@@ -194,6 +192,8 @@ export default function HoyPage() {
       })}
 
       {pendingUndo && <UndoToast message="Seguimiento completado" onUndo={handleUndo} />}
+
+      <AnotarInteraccionSheet open={interaccionOpen} onClose={() => setInteraccionOpen(false)} />
     </div>
   );
 }
