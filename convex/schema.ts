@@ -60,7 +60,12 @@ export default defineSchema({
     texto: v.string(),
     fecha: v.string(), // "YYYY-MM-DD"
     autorId: v.id("users"),
-  }).index("by_cliente", ["clienteId"]),
+  })
+    .index("by_cliente", ["clienteId"])
+    // Permite traer el historial de un cliente ya ordenado y acotado por la
+    // propia base de datos (`.order("desc").take(N)`), en vez de un
+    // `.collect()` completo seguido de un sort en memoria.
+    .index("by_cliente_fecha", ["clienteId", "fecha"]),
 
   ventas: defineTable({
     clienteId: v.id("clientes"),

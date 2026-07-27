@@ -13,6 +13,7 @@ import type * as auth from "../auth.js";
 import type * as bootstrap from "../bootstrap.js";
 import type * as clientes from "../clientes.js";
 import type * as http from "../http.js";
+import type * as interacciones from "../interacciones.js";
 import type * as seed from "../seed.js";
 import type * as seguimientos from "../seguimientos.js";
 import type * as users from "../users.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   bootstrap: typeof bootstrap;
   clientes: typeof clientes;
   http: typeof http;
+  interacciones: typeof interacciones;
   seed: typeof seed;
   seguimientos: typeof seguimientos;
   users: typeof users;
