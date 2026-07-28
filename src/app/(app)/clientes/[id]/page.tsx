@@ -4,7 +4,16 @@ import { useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
-import { ArrowLeft, Phone, Mail, MessageSquarePlus, CalendarClock, TrendingUp, History } from "lucide-react";
+import {
+  ArrowLeft,
+  Phone,
+  Mail,
+  MessageSquarePlus,
+  CalendarClock,
+  TrendingUp,
+  History,
+  CheckCircle2,
+} from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +47,31 @@ export default function ClienteDetailPage() {
     api.seguimientos.porCliente,
     cliente ? { clienteId: cliente._id } : "skip",
   );
+  const seguimientosCompletados = useQuery(
+    api.seguimientos.completadosPorCliente,
+    cliente ? { clienteId: cliente._id } : "skip",
+  );
+
+  // El Historial combina dos dominios (interacciones + seguimientos
+  // completados) en una sola línea de tiempo, ordenada por la fecha real del
+  // evento (fecha de la interacción o fechaHecho del seguimiento) — no por
+  // "todas las interacciones y luego todos los seguimientos". Cada dominio
+  // mantiene su propia query (igual que "Seguimientos pendientes" arriba);
+  // la combinación es solo de presentación, aquí en la página.
+  const historial =
+    interacciones === undefined || seguimientosCompletados === undefined
+      ? undefined
+      : [
+          ...interacciones.map((i) => ({ tipo: "interaccion" as const, item: i, fechaOrden: i.fecha })),
+          ...seguimientosCompletados.map((s) => ({
+            tipo: "seguimiento" as const,
+            item: s,
+            fechaOrden: s.fechaHecho!,
+          })),
+        ].sort((a, b) => {
+          if (a.fechaOrden !== b.fechaOrden) return a.fechaOrden < b.fechaOrden ? 1 : -1;
+          return b.item._creationTime - a.item._creationTime;
+        });
   const currentUser = useCurrentUser();
   const marcarHecho = useMutation(api.seguimientos.marcarHecho);
 
@@ -209,13 +243,13 @@ export default function ClienteDetailPage() {
 
       <Card>
         <CardHeader title="Historial" />
-        <CardBody className={interacciones && interacciones.length > 0 ? "p-0" : undefined}>
-          {interacciones === undefined ? (
+        <CardBody className={historial && historial.length > 0 ? "p-0" : undefined}>
+          {historial === undefined ? (
             <div className="flex flex-col gap-3 p-5">
               <Skeleton className="h-14 w-full" />
               <Skeleton className="h-14 w-full" />
             </div>
-          ) : interacciones.length === 0 ? (
+          ) : historial.length === 0 ? (
             <EmptyState
               icon={<History size={24} strokeWidth={1.5} aria-hidden />}
               title="Sin actividad todavía"
@@ -223,27 +257,51 @@ export default function ClienteDetailPage() {
             />
           ) : (
             <div className="flex flex-col divide-y divide-border">
-              {interacciones.map((i) => {
-                const Icon = INTERACCION_TIPO_ICON[i.tipo];
+              {historial.map((entry) => {
+                if (entry.tipo === "interaccion") {
+                  const i = entry.item;
+                  const Icon = INTERACCION_TIPO_ICON[i.tipo];
+                  return (
+                    <div key={i._id} className="flex gap-3 p-4">
+                      <Icon
+                        size={18}
+                        strokeWidth={1.5}
+                        className="mt-0.5 shrink-0 text-text-subtle"
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium text-text">
+                            {INTERACCION_TIPO_LABEL[i.tipo]}
+                          </span>
+                          <span className="shrink-0 text-[13px] text-text-subtle">
+                            {FORMATO_FECHA_CORTA.format(new Date(`${i.fecha}T00:00:00`))}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-sm text-text-muted">{i.texto}</p>
+                        <p className="mt-1 text-[13px] text-text-subtle">Por {i.autorNombre}</p>
+                      </div>
+                    </div>
+                  );
+                }
+                const s = entry.item;
                 return (
-                  <div key={i._id} className="flex gap-3 p-4">
-                    <Icon
+                  <div key={s._id} className="flex gap-3 p-4">
+                    <CheckCircle2
                       size={18}
                       strokeWidth={1.5}
-                      className="mt-0.5 shrink-0 text-text-subtle"
+                      className="mt-0.5 shrink-0 text-success-text"
                       aria-hidden
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-text">
-                          {INTERACCION_TIPO_LABEL[i.tipo]}
-                        </span>
+                        <span className="text-sm font-medium text-text">Seguimiento completado</span>
                         <span className="shrink-0 text-[13px] text-text-subtle">
-                          {FORMATO_FECHA_CORTA.format(new Date(`${i.fecha}T00:00:00`))}
+                          {FORMATO_FECHA_CORTA.format(new Date(`${s.fechaHecho}T00:00:00`))}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-sm text-text-muted">{i.texto}</p>
-                      <p className="mt-1 text-[13px] text-text-subtle">Por {i.autorNombre}</p>
+                      <p className="mt-0.5 text-sm text-text-muted">{s.accion}</p>
+                      <p className="mt-1 text-[13px] text-text-subtle">Por {s.responsableNombre}</p>
                     </div>
                   </div>
                 );
