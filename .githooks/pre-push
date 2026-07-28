@@ -1,0 +1,41 @@
+#!/bin/sh
+# Gate: `git push` requires literal, explicit authorization from the repo
+# owner before it is allowed to proceed.
+#
+# Why this exists: an AI assistant works in this repo and runs `git push`
+# through a shell tool. "Ask before pushing" as a promise is not enough —
+# this hook makes it a hard technical gate. No push proceeds without a
+# fresh, single-use authorization marker containing one of the literal
+# go-words the owner actually typed in chat (push / sube / go push /
+# equivalente). The assistant must stop, show the pending diff/commits,
+# and wait for that literal word before writing the marker and pushing.
+#
+# The marker is consumed (deleted) on use, so a stale authorization can
+# never be silently reused for a later, different push.
+
+AUTH_FILE="$(git rev-parse --git-dir)/PUSH_AUTHORIZED"
+
+if [ ! -f "$AUTH_FILE" ]; then
+  echo "" >&2
+  echo "BLOQUEADO: git push requiere autorizacion literal explicita del owner." >&2
+  echo "El asistente debe parar, mostrar el diff/commits pendientes, y pedir" >&2
+  echo "un GO literal (push / sube / go push / equivalente) antes de continuar." >&2
+  echo "No se encontro autorizacion en: $AUTH_FILE" >&2
+  echo "" >&2
+  exit 1
+fi
+
+word=$(cat "$AUTH_FILE")
+rm -f "$AUTH_FILE"
+normalized=$(printf '%s' "$word" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+case "$normalized" in
+  push|sube|"go push"|"dale push"|"adelante con el push"|"autorizado push")
+    echo "Autorizacion valida ('$word'). Procediendo con el push." >&2
+    exit 0
+    ;;
+  *)
+    echo "BLOQUEADO: contenido de autorizacion no reconocido: '$word'" >&2
+    exit 1
+    ;;
+esac
