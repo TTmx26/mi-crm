@@ -57,7 +57,13 @@ export default defineSchema({
     // los pendientes de un cliente ya acotados por la base de datos (sin
     // escanear también sus seguimientos ya completados, que sí se acumulan
     // sin límite con el tiempo).
-    .index("by_cliente_estado_vence", ["clienteId", "hecho", "vence"]),
+    .index("by_cliente_estado_vence", ["clienteId", "hecho", "vence"])
+    // Espejo del anterior para el otro sentido: traer los COMPLETADOS de un
+    // cliente (para el Historial) sin escanear sus pendientes. Ordena por
+    // fechaHecho (cuándo se completó de verdad), no por vence (cuándo estaba
+    // programado) — dentro de hecho=true, fechaHecho siempre está poblado
+    // (lo fija marcarHecho).
+    .index("by_cliente_estado_fechaHecho", ["clienteId", "hecho", "fechaHecho"]),
 
   interacciones: defineTable({
     clienteId: v.id("clientes"),

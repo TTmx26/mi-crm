@@ -193,3 +193,36 @@ export const porCliente = query({
     }));
   },
 });
+
+// Mismo tope defensivo que MAX_PENDIENTES_CLIENTE: aquí sí hace falta de
+// verdad, a diferencia de los pendientes, porque los completados de un
+// cliente se acumulan sin límite con el tiempo (nunca "salen" de este
+// filtro).
+const MAX_COMPLETADOS_CLIENTE = 100;
+
+// Para el Historial de la ficha (se combina en el cliente con las
+// interacciones — cada dominio mantiene su propia query, la página compone).
+export const completadosPorCliente = query({
+  args: { clienteId: v.id("clientes") },
+  handler: async (ctx, { clienteId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("No autenticado");
+
+    const completados = await ctx.db
+      .query("seguimientos")
+      .withIndex("by_cliente_estado_fechaHecho", (q) => q.eq("clienteId", clienteId).eq("hecho", true))
+      .order("desc")
+      .take(MAX_COMPLETADOS_CLIENTE);
+
+    const responsableIds = [...new Set(completados.map((s) => s.responsableId))];
+    const responsables = await Promise.all(responsableIds.map((id) => ctx.db.get("users", id)));
+    const nombrePorResponsable = new Map(
+      responsableIds.map((id, i) => [id, responsables[i]?.name ?? "Usuario eliminado"]),
+    );
+
+    return completados.map((s) => ({
+      ...s,
+      responsableNombre: nombrePorResponsable.get(s.responsableId)!,
+    }));
+  },
+});
