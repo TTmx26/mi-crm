@@ -171,7 +171,11 @@ export default function HoyPage() {
                   title={emptyText}
                   helperText="Cuando programes un seguimiento, aparecerá aquí."
                   action={
-                    <Button size="compact" variant="secondary">
+                    <Button
+                      size="compact"
+                      variant="secondary"
+                      onClick={() => setSeguimientoOpen(true)}
+                    >
                       Nueva tarea
                     </Button>
                   }
