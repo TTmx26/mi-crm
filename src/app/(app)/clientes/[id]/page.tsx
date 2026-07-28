@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { ArrowLeft, Phone, Mail, MessageSquarePlus, CalendarClock, TrendingUp, History } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
@@ -15,8 +15,10 @@ import { CLIENTE_ESTADO_LABEL, CLIENTE_ESTADO_BADGE_VARIANT } from "@/lib/client
 import { CLIENTE_PRIORIDAD_LABEL, CLIENTE_PRIORIDAD_BADGE_VARIANT } from "@/lib/cliente-prioridad";
 import { CLIENTE_CANAL_LABEL } from "@/lib/cliente-canal";
 import { INTERACCION_TIPO_LABEL, INTERACCION_TIPO_ICON } from "@/lib/interaccion-tipo";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { EditarClienteSheet } from "./_components/editar-cliente-sheet";
 import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
+import { ProgramarSeguimientoSheet } from "@/components/seguimientos/programar-seguimiento-sheet";
 import { api } from "../../../../../convex/_generated/api";
 
 const FORMATO_FECHA_ALTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" });
@@ -27,10 +29,17 @@ export default function ClienteDetailPage() {
   const cliente = useQuery(api.clientes.obtener, { id });
   const [editOpen, setEditOpen] = useState(false);
   const [interaccionOpen, setInteraccionOpen] = useState(false);
+  const [seguimientoOpen, setSeguimientoOpen] = useState(false);
   const interacciones = useQuery(
     api.interacciones.listarPorCliente,
     cliente ? { clienteId: cliente._id } : "skip",
   );
+  const seguimientosPendientes = useQuery(
+    api.seguimientos.porCliente,
+    cliente ? { clienteId: cliente._id } : "skip",
+  );
+  const currentUser = useCurrentUser();
+  const marcarHecho = useMutation(api.seguimientos.marcarHecho);
 
   if (cliente === null) {
     notFound();
@@ -136,7 +145,11 @@ export default function ClienteDetailPage() {
           <MessageSquarePlus size={18} strokeWidth={1.5} aria-hidden />
           Anotar interacción
         </Button>
-        <Button variant="secondary" className="justify-start">
+        <Button
+          variant="secondary"
+          className="justify-start"
+          onClick={() => setSeguimientoOpen(true)}
+        >
           <CalendarClock size={18} strokeWidth={1.5} aria-hidden />
           Programar seguimiento
         </Button>
@@ -148,8 +161,49 @@ export default function ClienteDetailPage() {
 
       <Card className="mb-4">
         <CardHeader title="Seguimientos pendientes" />
-        <CardBody>
-          <p className="text-sm text-text-muted">Sin seguimientos pendientes.</p>
+        <CardBody className={seguimientosPendientes && seguimientosPendientes.length > 0 ? "p-0" : undefined}>
+          {seguimientosPendientes === undefined ? (
+            <div className="flex flex-col gap-3 p-5">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : seguimientosPendientes.length === 0 ? (
+            <p className="p-5 text-sm text-text-muted">Sin seguimientos pendientes.</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-border">
+              {seguimientosPendientes.map((s) => {
+                const esMio = s.responsableId === currentUser?._id;
+                return (
+                  <div key={s._id} className="flex items-center gap-3 p-4">
+                    {esMio ? (
+                      <button
+                        type="button"
+                        aria-label="Marcar como hecho"
+                        onClick={() => void marcarHecho({ id: s._id })}
+                        className="flex size-11 shrink-0 items-center justify-center"
+                      >
+                        <span
+                          className="size-6 rounded-full border-2 border-border-strong transition-colors duration-[150ms] hover:border-primary"
+                          aria-hidden
+                        />
+                      </button>
+                    ) : (
+                      <span className="flex size-11 shrink-0 items-center justify-center">
+                        <span className="size-6 rounded-full border-2 border-border" aria-hidden />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-text">{s.accion}</p>
+                      <p className="text-[13px] text-text-subtle">
+                        {FORMATO_FECHA_CORTA.format(new Date(`${s.vence}T00:00:00`))}
+                        {!esMio && ` · Asignado a ${s.responsableNombre}`}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardBody>
       </Card>
 
@@ -205,6 +259,11 @@ export default function ClienteDetailPage() {
           <AnotarInteraccionSheet
             open={interaccionOpen}
             onClose={() => setInteraccionOpen(false)}
+            clienteId={cliente._id}
+          />
+          <ProgramarSeguimientoSheet
+            open={seguimientoOpen}
+            onClose={() => setSeguimientoOpen(false)}
             clienteId={cliente._id}
           />
         </>

@@ -12,6 +12,7 @@ import { SeguimientoRow, type SeguimientoBucket } from "@/components/ui/seguimie
 import { cn } from "@/lib/utils";
 import { UndoToast } from "./_components/undo-toast";
 import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
+import { ProgramarSeguimientoSheet } from "@/components/seguimientos/programar-seguimiento-sheet";
 import { todayISO } from "@/lib/date";
 import { api } from "../../../../convex/_generated/api";
 import type { SeguimientoParaHoy } from "../../../../convex/seguimientos";
@@ -53,6 +54,7 @@ export default function HoyPage() {
   const data = useQuery(api.seguimientos.paraHoy, queryArgs);
 
   const [interaccionOpen, setInteraccionOpen] = useState(false);
+  const [seguimientoOpen, setSeguimientoOpen] = useState(false);
   const [pendingUndo, setPendingUndo] = useState<PendingUndo | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -118,7 +120,13 @@ export default function HoyPage() {
           <button
             key={label}
             type="button"
-            onClick={label === "Anotar interacción" ? () => setInteraccionOpen(true) : undefined}
+            onClick={
+              label === "Nueva tarea"
+                ? () => setSeguimientoOpen(true)
+                : label === "Anotar interacción"
+                  ? () => setInteraccionOpen(true)
+                  : undefined
+            }
             className="flex flex-col items-center gap-2 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition-colors duration-[150ms] hover:bg-surface-2"
           >
             <span
@@ -163,7 +171,11 @@ export default function HoyPage() {
                   title={emptyText}
                   helperText="Cuando programes un seguimiento, aparecerá aquí."
                   action={
-                    <Button size="compact" variant="secondary">
+                    <Button
+                      size="compact"
+                      variant="secondary"
+                      onClick={() => setSeguimientoOpen(true)}
+                    >
                       Nueva tarea
                     </Button>
                   }
@@ -194,6 +206,7 @@ export default function HoyPage() {
       {pendingUndo && <UndoToast message="Seguimiento completado" onUndo={handleUndo} />}
 
       <AnotarInteraccionSheet open={interaccionOpen} onClose={() => setInteraccionOpen(false)} />
+      <ProgramarSeguimientoSheet open={seguimientoOpen} onClose={() => setSeguimientoOpen(false)} />
     </div>
   );
 }

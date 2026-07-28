@@ -52,7 +52,12 @@ export default defineSchema({
   })
     .index("by_cliente", ["clienteId"])
     .index("by_vence", ["vence"])
-    .index("by_responsable_estado_vence", ["responsableId", "hecho", "vence"]),
+    .index("by_responsable_estado_vence", ["responsableId", "hecho", "vence"])
+    // Igual que by_responsable_estado_vence pero por cliente: permite traer
+    // los pendientes de un cliente ya acotados por la base de datos (sin
+    // escanear también sus seguimientos ya completados, que sí se acumulan
+    // sin límite con el tiempo).
+    .index("by_cliente_estado_vence", ["clienteId", "hecho", "vence"]),
 
   interacciones: defineTable({
     clienteId: v.id("clientes"),
