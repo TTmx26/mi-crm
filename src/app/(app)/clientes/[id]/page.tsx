@@ -28,10 +28,12 @@ import { INTERACCION_TIPO_LABEL, INTERACCION_TIPO_ICON } from "@/lib/interaccion
 import { VENTA_ESTADO_LABEL, VENTA_ESTADO_BADGE_VARIANT } from "@/lib/venta-estado";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { EditarClienteSheet } from "./_components/editar-cliente-sheet";
+import { EditarVentaSheet } from "./_components/editar-venta-sheet";
 import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
 import { ProgramarSeguimientoSheet } from "@/components/seguimientos/programar-seguimiento-sheet";
 import { RegistrarVentaSheet } from "@/components/ventas/registrar-venta-sheet";
 import { api } from "../../../../../convex/_generated/api";
+import type { Doc } from "../../../../../convex/_generated/dataModel";
 
 const FORMATO_FECHA_ALTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" });
 const FORMATO_FECHA_CORTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
@@ -44,6 +46,7 @@ export default function ClienteDetailPage() {
   const [interaccionOpen, setInteraccionOpen] = useState(false);
   const [seguimientoOpen, setSeguimientoOpen] = useState(false);
   const [ventaOpen, setVentaOpen] = useState(false);
+  const [editingVenta, setEditingVenta] = useState<Doc<"ventas"> | null>(null);
   const interacciones = useQuery(
     api.interacciones.listarPorCliente,
     cliente ? { clienteId: cliente._id } : "skip",
@@ -82,6 +85,7 @@ export default function ClienteDetailPage() {
         });
   const currentUser = useCurrentUser();
   const marcarHecho = useMutation(api.seguimientos.marcarHecho);
+  const cambiarEstadoVenta = useMutation(api.ventas.cambiarEstado);
 
   if (cliente === null) {
     notFound();
@@ -316,31 +320,60 @@ export default function ClienteDetailPage() {
                   );
                 }
                 const venta = entry.item;
+                // Contenedor no interactivo con dos zonas HERMANAS (no un
+                // <button> conteniendo a otros botones, que sería HTML
+                // inválido): el botón de contenido abre la edición; los
+                // botones rápidos de estado, si los hay, van debajo como
+                // hermanos dentro del mismo div.
                 return (
-                  <div key={venta._id} className="flex gap-3 p-4">
-                    <Coins
-                      size={18}
-                      strokeWidth={1.5}
-                      className="mt-0.5 shrink-0 text-text-subtle"
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-text">{venta.concepto}</span>
-                        <span className="shrink-0 text-[13px] text-text-subtle">
-                          {FORMATO_FECHA_CORTA.format(new Date(`${venta.fecha}T00:00:00`))}
-                        </span>
+                  <div key={venta._id} className="flex flex-col gap-2 p-4">
+                    <button
+                      type="button"
+                      onClick={() => setEditingVenta(venta)}
+                      className="flex w-full gap-3 text-left"
+                    >
+                      <Coins
+                        size={18}
+                        strokeWidth={1.5}
+                        className="mt-0.5 shrink-0 text-text-subtle"
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium text-text">{venta.concepto}</span>
+                          <span className="shrink-0 text-[13px] text-text-subtle">
+                            {FORMATO_FECHA_CORTA.format(new Date(`${venta.fecha}T00:00:00`))}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2">
+                          <Badge variant={VENTA_ESTADO_BADGE_VARIANT[venta.estado]}>
+                            {VENTA_ESTADO_LABEL[venta.estado]}
+                          </Badge>
+                          <span className="text-sm font-medium text-text">
+                            {FORMATO_IMPORTE.format(venta.importe)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[13px] text-text-subtle">Por {venta.autorNombre}</p>
                       </div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <Badge variant={VENTA_ESTADO_BADGE_VARIANT[venta.estado]}>
-                          {VENTA_ESTADO_LABEL[venta.estado]}
-                        </Badge>
-                        <span className="text-sm font-medium text-text">
-                          {FORMATO_IMPORTE.format(venta.importe)}
-                        </span>
+                    </button>
+                    {venta.estado === "oportunidad_abierta" && (
+                      <div className="flex gap-2 pl-[30px]">
+                        <Button
+                          size="compact"
+                          variant="secondary"
+                          onClick={() => void cambiarEstadoVenta({ id: venta._id, estado: "ganada" })}
+                        >
+                          Marcar como ganada
+                        </Button>
+                        <Button
+                          size="compact"
+                          variant="secondary"
+                          onClick={() => void cambiarEstadoVenta({ id: venta._id, estado: "perdida" })}
+                        >
+                          Marcar como perdida
+                        </Button>
                       </div>
-                      <p className="mt-1 text-[13px] text-text-subtle">Por {venta.autorNombre}</p>
-                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -365,6 +398,7 @@ export default function ClienteDetailPage() {
           <RegistrarVentaSheet open={ventaOpen} onClose={() => setVentaOpen(false)} clienteId={cliente._id} />
         </>
       )}
+      {editingVenta && <EditarVentaSheet venta={editingVenta} onClose={() => setEditingVenta(null)} />}
     </div>
   );
 }
