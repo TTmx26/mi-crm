@@ -18,6 +18,7 @@ import type * as seed from "../seed.js";
 import type * as seguimientos from "../seguimientos.js";
 import type * as users from "../users.js";
 import type * as validation from "../validation.js";
+import type * as ventas from "../ventas.js";
 
 import type {
   ApiFromModules,
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   seguimientos: typeof seguimientos;
   users: typeof users;
   validation: typeof validation;
+  ventas: typeof ventas;
 }>;
 
 /**

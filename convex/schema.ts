@@ -87,5 +87,8 @@ export default defineSchema({
     autorId: v.id("users"),
   })
     .index("by_cliente", ["clienteId"])
-    .index("by_estado", ["estado"]),
+    .index("by_estado", ["estado"])
+    // Permite traer las ventas de un cliente ya ordenadas y acotadas por la
+    // propia base de datos (mismo motivo que by_cliente_fecha en interacciones).
+    .index("by_cliente_fecha", ["clienteId", "fecha"]),
 });
