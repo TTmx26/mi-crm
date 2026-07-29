@@ -13,6 +13,7 @@ import {
   TrendingUp,
   History,
   CheckCircle2,
+  Coins,
 } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
@@ -24,14 +25,17 @@ import { CLIENTE_ESTADO_LABEL, CLIENTE_ESTADO_BADGE_VARIANT } from "@/lib/client
 import { CLIENTE_PRIORIDAD_LABEL, CLIENTE_PRIORIDAD_BADGE_VARIANT } from "@/lib/cliente-prioridad";
 import { CLIENTE_CANAL_LABEL } from "@/lib/cliente-canal";
 import { INTERACCION_TIPO_LABEL, INTERACCION_TIPO_ICON } from "@/lib/interaccion-tipo";
+import { VENTA_ESTADO_LABEL, VENTA_ESTADO_BADGE_VARIANT } from "@/lib/venta-estado";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { EditarClienteSheet } from "./_components/editar-cliente-sheet";
 import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
 import { ProgramarSeguimientoSheet } from "@/components/seguimientos/programar-seguimiento-sheet";
+import { RegistrarVentaSheet } from "@/components/ventas/registrar-venta-sheet";
 import { api } from "../../../../../convex/_generated/api";
 
 const FORMATO_FECHA_ALTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" });
 const FORMATO_FECHA_CORTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
+const FORMATO_IMPORTE = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
 
 export default function ClienteDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +43,7 @@ export default function ClienteDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [interaccionOpen, setInteraccionOpen] = useState(false);
   const [seguimientoOpen, setSeguimientoOpen] = useState(false);
+  const [ventaOpen, setVentaOpen] = useState(false);
   const interacciones = useQuery(
     api.interacciones.listarPorCliente,
     cliente ? { clienteId: cliente._id } : "skip",
@@ -51,15 +56,17 @@ export default function ClienteDetailPage() {
     api.seguimientos.completadosPorCliente,
     cliente ? { clienteId: cliente._id } : "skip",
   );
+  const ventas = useQuery(api.ventas.porCliente, cliente ? { clienteId: cliente._id } : "skip");
 
-  // El Historial combina dos dominios (interacciones + seguimientos
-  // completados) en una sola línea de tiempo, ordenada por la fecha real del
-  // evento (fecha de la interacción o fechaHecho del seguimiento) — no por
-  // "todas las interacciones y luego todos los seguimientos". Cada dominio
-  // mantiene su propia query (igual que "Seguimientos pendientes" arriba);
-  // la combinación es solo de presentación, aquí en la página.
+  // El Historial combina tres dominios (interacciones + seguimientos
+  // completados + ventas) en una sola línea de tiempo, ordenada por la fecha
+  // real del evento (fecha de la interacción/venta o fechaHecho del
+  // seguimiento) — no por "todas las interacciones y luego todo lo demás".
+  // Cada dominio mantiene su propia query (igual que "Seguimientos
+  // pendientes" arriba); la combinación es solo de presentación, aquí en la
+  // página.
   const historial =
-    interacciones === undefined || seguimientosCompletados === undefined
+    interacciones === undefined || seguimientosCompletados === undefined || ventas === undefined
       ? undefined
       : [
           ...interacciones.map((i) => ({ tipo: "interaccion" as const, item: i, fechaOrden: i.fecha })),
@@ -68,6 +75,7 @@ export default function ClienteDetailPage() {
             item: s,
             fechaOrden: s.fechaHecho!,
           })),
+          ...ventas.map((v) => ({ tipo: "venta" as const, item: v, fechaOrden: v.fecha })),
         ].sort((a, b) => {
           if (a.fechaOrden !== b.fechaOrden) return a.fechaOrden < b.fechaOrden ? 1 : -1;
           return b.item._creationTime - a.item._creationTime;
@@ -187,7 +195,7 @@ export default function ClienteDetailPage() {
           <CalendarClock size={18} strokeWidth={1.5} aria-hidden />
           Programar seguimiento
         </Button>
-        <Button variant="secondary" className="justify-start">
+        <Button variant="secondary" className="justify-start" onClick={() => setVentaOpen(true)}>
           <TrendingUp size={18} strokeWidth={1.5} aria-hidden />
           Registrar venta
         </Button>
@@ -284,24 +292,54 @@ export default function ClienteDetailPage() {
                     </div>
                   );
                 }
-                const s = entry.item;
+                if (entry.tipo === "seguimiento") {
+                  const s = entry.item;
+                  return (
+                    <div key={s._id} className="flex gap-3 p-4">
+                      <CheckCircle2
+                        size={18}
+                        strokeWidth={1.5}
+                        className="mt-0.5 shrink-0 text-success-text"
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium text-text">Seguimiento completado</span>
+                          <span className="shrink-0 text-[13px] text-text-subtle">
+                            {FORMATO_FECHA_CORTA.format(new Date(`${s.fechaHecho}T00:00:00`))}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-sm text-text-muted">{s.accion}</p>
+                        <p className="mt-1 text-[13px] text-text-subtle">Por {s.responsableNombre}</p>
+                      </div>
+                    </div>
+                  );
+                }
+                const venta = entry.item;
                 return (
-                  <div key={s._id} className="flex gap-3 p-4">
-                    <CheckCircle2
+                  <div key={venta._id} className="flex gap-3 p-4">
+                    <Coins
                       size={18}
                       strokeWidth={1.5}
-                      className="mt-0.5 shrink-0 text-success-text"
+                      className="mt-0.5 shrink-0 text-text-subtle"
                       aria-hidden
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-text">Seguimiento completado</span>
+                        <span className="text-sm font-medium text-text">{venta.concepto}</span>
                         <span className="shrink-0 text-[13px] text-text-subtle">
-                          {FORMATO_FECHA_CORTA.format(new Date(`${s.fechaHecho}T00:00:00`))}
+                          {FORMATO_FECHA_CORTA.format(new Date(`${venta.fecha}T00:00:00`))}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-sm text-text-muted">{s.accion}</p>
-                      <p className="mt-1 text-[13px] text-text-subtle">Por {s.responsableNombre}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Badge variant={VENTA_ESTADO_BADGE_VARIANT[venta.estado]}>
+                          {VENTA_ESTADO_LABEL[venta.estado]}
+                        </Badge>
+                        <span className="text-sm font-medium text-text">
+                          {FORMATO_IMPORTE.format(venta.importe)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[13px] text-text-subtle">Por {venta.autorNombre}</p>
                     </div>
                   </div>
                 );
@@ -324,6 +362,7 @@ export default function ClienteDetailPage() {
             onClose={() => setSeguimientoOpen(false)}
             clienteId={cliente._id}
           />
+          <RegistrarVentaSheet open={ventaOpen} onClose={() => setVentaOpen(false)} clienteId={cliente._id} />
         </>
       )}
     </div>

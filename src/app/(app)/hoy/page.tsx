@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { UndoToast } from "./_components/undo-toast";
 import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
 import { ProgramarSeguimientoSheet } from "@/components/seguimientos/programar-seguimiento-sheet";
+import { RegistrarVentaSheet } from "@/components/ventas/registrar-venta-sheet";
 import { todayISO } from "@/lib/date";
 import { api } from "../../../../convex/_generated/api";
 import type { SeguimientoParaHoy } from "../../../../convex/seguimientos";
@@ -55,6 +56,7 @@ export default function HoyPage() {
 
   const [interaccionOpen, setInteraccionOpen] = useState(false);
   const [seguimientoOpen, setSeguimientoOpen] = useState(false);
+  const [ventaOpen, setVentaOpen] = useState(false);
   const [pendingUndo, setPendingUndo] = useState<PendingUndo | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -125,7 +127,9 @@ export default function HoyPage() {
                 ? () => setSeguimientoOpen(true)
                 : label === "Anotar interacción"
                   ? () => setInteraccionOpen(true)
-                  : undefined
+                  : label === "Registrar venta"
+                    ? () => setVentaOpen(true)
+                    : undefined
             }
             className="flex flex-col items-center gap-2 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition-colors duration-[150ms] hover:bg-surface-2"
           >
@@ -207,6 +211,7 @@ export default function HoyPage() {
 
       <AnotarInteraccionSheet open={interaccionOpen} onClose={() => setInteraccionOpen(false)} />
       <ProgramarSeguimientoSheet open={seguimientoOpen} onClose={() => setSeguimientoOpen(false)} />
+      <RegistrarVentaSheet open={ventaOpen} onClose={() => setVentaOpen(false)} />
     </div>
   );
 }
