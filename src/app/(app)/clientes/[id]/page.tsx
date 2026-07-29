@@ -26,6 +26,7 @@ import { CLIENTE_PRIORIDAD_LABEL, CLIENTE_PRIORIDAD_BADGE_VARIANT } from "@/lib/
 import { CLIENTE_CANAL_LABEL } from "@/lib/cliente-canal";
 import { INTERACCION_TIPO_LABEL, INTERACCION_TIPO_ICON } from "@/lib/interaccion-tipo";
 import { VENTA_ESTADO_LABEL, VENTA_ESTADO_BADGE_VARIANT } from "@/lib/venta-estado";
+import { FORMATO_IMPORTE } from "@/lib/moneda";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { EditarClienteSheet } from "./_components/editar-cliente-sheet";
 import { EditarVentaSheet } from "./_components/editar-venta-sheet";
@@ -37,7 +38,6 @@ import type { Doc } from "../../../../../convex/_generated/dataModel";
 
 const FORMATO_FECHA_ALTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" });
 const FORMATO_FECHA_CORTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
-const FORMATO_IMPORTE = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
 
 export default function ClienteDetailPage() {
   const { id } = useParams<{ id: string }>();

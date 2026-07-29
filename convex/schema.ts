@@ -90,5 +90,9 @@ export default defineSchema({
     .index("by_estado", ["estado"])
     // Permite traer las ventas de un cliente ya ordenadas y acotadas por la
     // propia base de datos (mismo motivo que by_cliente_fecha en interacciones).
-    .index("by_cliente_fecha", ["clienteId", "fecha"]),
+    .index("by_cliente_fecha", ["clienteId", "fecha"])
+    // Para la pantalla global /ventas (HOP-56): todas las ventas del negocio
+    // ordenadas por fecha, sin acotar por cliente. Sin este índice sería un
+    // `.collect()` sin acotar.
+    .index("by_fecha", ["fecha"]),
 });

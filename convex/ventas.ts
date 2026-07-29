@@ -35,6 +35,39 @@ export const porCliente = query({
   },
 });
 
+// Tope defensivo para la pantalla global /ventas (HOP-56): a diferencia de
+// porCliente, aquí no hay un `clienteId` que acote de forma natural — el
+// límite es puramente de escala de MVP.
+const MAX_VENTAS_GLOBAL = 500;
+
+// Pantalla global /ventas (HOP-56): todas las ventas del negocio, no
+// acotadas por cliente. Se decoran con `clienteNombre` (mismo patrón
+// `Promise.all` + `Map` que `autorNombre` en porCliente) porque el listado
+// necesita mostrar de quién es cada operación. El filtrado por estado y las
+// sumas de las métricas se derivan en el cliente (la página), no aquí.
+export const listar = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("No autenticado");
+
+    const ventas = await ctx.db.query("ventas").withIndex("by_fecha").order("desc").take(MAX_VENTAS_GLOBAL);
+
+    ventas.sort((a, b) => {
+      if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
+      return b._creationTime - a._creationTime;
+    });
+
+    const clienteIds = [...new Set(ventas.map((v) => v.clienteId))];
+    const clientes = await Promise.all(clienteIds.map((id) => ctx.db.get("clientes", id)));
+    const nombrePorCliente = new Map(
+      clienteIds.map((id, i) => [id, clientes[i]?.nombre ?? "Cliente eliminado"]),
+    );
+
+    return ventas.map((v) => ({ ...v, clienteNombre: nombrePorCliente.get(v.clienteId)! }));
+  },
+});
+
 // Compartida por crear/editar: mismas reglas en ambas, evita que diverjan.
 // Number.isFinite descarta Infinity/NaN, que `importe > 0` por sí solo no
 // filtra (Infinity > 0 es true).
