@@ -78,6 +78,17 @@ export default defineSchema({
     // `.collect()` completo seguido de un sort en memoria.
     .index("by_cliente_fecha", ["clienteId", "fecha"]),
 
+  // Rate-limit persistente de solicitudes de recuperación de contraseña, por
+  // email (HOP-12). Convex Auth no limita el ENVÍO de OTP (solo la
+  // verificación fallida), así que este control vive en convex/passwordReset.ts
+  // y se aplica ANTES de que la librería cree/reemplace el OTP.
+  passwordResetThrottle: defineTable({
+    email: v.string(), // normalizado (lowercase + trim)
+    windowStart: v.number(), // inicio de la ventana de conteo (ms epoch)
+    count: v.number(), // envíos permitidos dentro de la ventana actual
+    lastSentAt: v.number(), // último envío permitido (ms epoch)
+  }).index("by_email", ["email"]),
+
   ventas: defineTable({
     clienteId: v.id("clientes"),
     concepto: v.string(),
