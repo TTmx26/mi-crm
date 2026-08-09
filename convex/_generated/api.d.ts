@@ -14,6 +14,7 @@ import type * as bootstrap from "../bootstrap.js";
 import type * as clientes from "../clientes.js";
 import type * as http from "../http.js";
 import type * as interacciones from "../interacciones.js";
+import type * as passwordReset from "../passwordReset.js";
 import type * as seed from "../seed.js";
 import type * as seguimientos from "../seguimientos.js";
 import type * as users from "../users.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   clientes: typeof clientes;
   http: typeof http;
   interacciones: typeof interacciones;
+  passwordReset: typeof passwordReset;
   seed: typeof seed;
   seguimientos: typeof seguimientos;
   users: typeof users;
