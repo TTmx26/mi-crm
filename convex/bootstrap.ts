@@ -46,6 +46,41 @@ export const updateUserEmail = internalMutation({
   },
 });
 
+// Migra la credencial de un provider de un email a otro (HOP-71). Complementa
+// a updateUserEmail: aquel solo cambia `users.email`, pero la credencial de
+// contraseña sigue enlazada por `authAccounts.providerAccountId` con el email
+// original, así que la recuperación/login por contraseña con el email nuevo no
+// encuentran la cuenta. Esto parchea `providerAccountId` conservando el
+// `secret` (hash de la contraseña, no se toca). No expuesta en la UI.
+// Uso: npx convex run bootstrap:updateAccountEmail \
+//   '{"provider":"password","oldEmail":"...","newEmail":"..."}' [--prod]
+export const updateAccountEmail = internalMutation({
+  args: { provider: v.string(), oldEmail: v.string(), newEmail: v.string() },
+  handler: async (ctx, { provider, oldEmail, newEmail }) => {
+    const account = await ctx.db
+      .query("authAccounts")
+      .withIndex("providerAndAccountId", (q) =>
+        q.eq("provider", provider).eq("providerAccountId", oldEmail),
+      )
+      .unique();
+    if (!account) {
+      throw new Error(`No existe cuenta ${provider} con providerAccountId ${oldEmail}`);
+    }
+    // El índice providerAndAccountId es único: aborta si ya hay una cuenta con
+    // el email nuevo, en vez de crear un duplicado inconsistente.
+    const clash = await ctx.db
+      .query("authAccounts")
+      .withIndex("providerAndAccountId", (q) =>
+        q.eq("provider", provider).eq("providerAccountId", newEmail),
+      )
+      .unique();
+    if (clash) {
+      throw new Error(`Ya existe una cuenta ${provider} con providerAccountId ${newEmail}`);
+    }
+    await ctx.db.patch(account._id, { providerAccountId: newEmail });
+  },
+});
+
 // Aprovisiona una credencial de contraseña real. No hay registro público
 // (HOP-14): esto sustituye a un formulario de alta hasta que exista un panel
 // de administración. Uso (una vez por usuario y por deployment):
