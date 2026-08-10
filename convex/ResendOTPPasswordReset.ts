@@ -16,7 +16,7 @@ export const ResendOTPPasswordReset = Resend({
   async sendVerificationRequest({ identifier: email, provider, token }) {
     const resend = new ResendAPI(provider.apiKey);
     const { error } = await resend.emails.send({
-      from: "Vibe CRM <onboarding@resend.dev>",
+      from: "Vibe CRM <no-reply@novapromx.com>",
       to: [email],
       subject: "Tu código para restablecer la contraseña — Vibe CRM",
       text: `Tu código para restablecer la contraseña es: ${token}\n\nSi no lo solicitaste, ignora este email.`,
