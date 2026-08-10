@@ -5,6 +5,7 @@ import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 export const ResendOTPPasswordReset = Resend({
   id: "resend-otp",
   apiKey: process.env.AUTH_RESEND_KEY,
+  maxAge: 30 * 60, // 30 minutos, R1 (antes heredaba 24 h del default de @auth/core)
   async generateVerificationToken() {
     const random: RandomReader = {
       read(bytes) {
