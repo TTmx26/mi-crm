@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUser, requireActiveUserId } from "./authz";
 import { esFechaValida } from "./validation";
 
 // Tope defensivo, mismo criterio que MAX_INTERACCIONES en interacciones.ts.
@@ -9,8 +9,7 @@ const MAX_VENTAS_CLIENTE = 200;
 export const porCliente = query({
   args: { clienteId: v.id("clientes") },
   handler: async (ctx, { clienteId }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     // El índice compuesto ordena por fecha en la propia base de datos, así
     // `take` acota de verdad (no un `.collect()` seguido de sort en memoria).
@@ -48,8 +47,7 @@ const MAX_VENTAS_GLOBAL = 500;
 export const listar = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     const ventas = await ctx.db.query("ventas").withIndex("by_fecha").order("desc").take(MAX_VENTAS_GLOBAL);
 
@@ -88,8 +86,7 @@ export const crear = mutation({
     fecha: v.string(),
   },
   handler: async (ctx, args) => {
-    const autorId = await getAuthUserId(ctx);
-    if (autorId === null) throw new Error("No autenticado");
+    const autorId = await requireActiveUserId(ctx);
 
     const cliente = await ctx.db.get("clientes", args.clienteId);
     if (!cliente) throw new Error("Cliente no encontrado");
@@ -121,8 +118,7 @@ export const editar = mutation({
     fecha: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     const existing = await ctx.db.get("ventas", args.id);
     if (!existing) throw new Error("Venta no encontrada");
@@ -150,8 +146,8 @@ export const cambiarEstado = mutation({
     estado: v.union(v.literal("ganada"), v.literal("perdida")),
   },
   handler: async (ctx, { id, estado }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) return;
+    const user = await getActiveUser(ctx);
+    if (!user) return;
     const venta = await ctx.db.get("ventas", id);
     if (!venta || venta.estado !== "oportunidad_abierta") return;
     await ctx.db.patch("ventas", id, { estado });

@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireActiveUserId } from "./authz";
 
 // `clientes` no está scopeada por usuario (todo el equipo ve todos los
 // clientes), pero igual se exige sesión — misma defensa en profundidad que
@@ -9,8 +9,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 export const listar = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
     return await ctx.db.query("clientes").order("desc").collect();
   },
 });
@@ -22,8 +21,7 @@ export const listar = query({
 export const obtener = query({
   args: { id: v.string() },
   handler: async (ctx, { id }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     const normalizedId = ctx.db.normalizeId("clientes", id);
     if (!normalizedId) return null;
@@ -44,8 +42,7 @@ export const crear = mutation({
     nota: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     const nombre = args.nombre.trim();
     if (!nombre) throw new Error("El nombre es obligatorio");
@@ -83,8 +80,7 @@ export const editar = mutation({
     nota: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     const existing = await ctx.db.get("clientes", args.id);
     if (!existing) throw new Error("Cliente no encontrado");

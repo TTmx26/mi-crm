@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUser, requireActiveUserId } from "./authz";
 import { esFechaValida } from "./validation";
 import type { Doc, Id } from "./_generated/dataModel";
 
@@ -50,10 +50,7 @@ export const paraHoy = query({
     hoy: v.string(),
   },
   handler: async (ctx, { hoy }): Promise<ParaHoyResult> => {
-    const responsableId = await getAuthUserId(ctx);
-    if (responsableId === null) {
-      throw new Error("No autenticado");
-    }
+    const responsableId = await requireActiveUserId(ctx);
 
     const pendientes = await ctx.db
       .query("seguimientos")
@@ -98,8 +95,9 @@ export const paraHoy = query({
 export const marcarHecho = mutation({
   args: { id: v.id("seguimientos") },
   handler: async (ctx, { id }) => {
-    const responsableId = await getAuthUserId(ctx);
-    if (responsableId === null) return;
+    const user = await getActiveUser(ctx);
+    if (!user) return;
+    const responsableId = user._id;
     const seguimiento = await ctx.db.get("seguimientos", id);
     if (!seguimiento || seguimiento.responsableId !== responsableId || seguimiento.hecho) return;
     // Fecha del servidor, no la que mande el cliente: `fechaHecho` es un dato
@@ -111,8 +109,9 @@ export const marcarHecho = mutation({
 export const deshacerHecho = mutation({
   args: { id: v.id("seguimientos") },
   handler: async (ctx, { id }) => {
-    const responsableId = await getAuthUserId(ctx);
-    if (responsableId === null) return;
+    const user = await getActiveUser(ctx);
+    if (!user) return;
+    const responsableId = user._id;
     const seguimiento = await ctx.db.get("seguimientos", id);
     if (!seguimiento || seguimiento.responsableId !== responsableId || !seguimiento.hecho) return;
     await ctx.db.patch("seguimientos", id, { hecho: false, fechaHecho: undefined });
@@ -132,8 +131,7 @@ export const crear = mutation({
     responsableId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
-    const sessionUserId = await getAuthUserId(ctx);
-    if (sessionUserId === null) throw new Error("No autenticado");
+    const sessionUserId = await requireActiveUserId(ctx);
 
     const cliente = await ctx.db.get("clientes", args.clienteId);
     if (!cliente) throw new Error("Cliente no encontrado");
@@ -166,8 +164,7 @@ const MAX_PENDIENTES_CLIENTE = 100;
 export const porCliente = query({
   args: { clienteId: v.id("clientes") },
   handler: async (ctx, { clienteId }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     // El índice compuesto acota el escaneo a los pendientes de este cliente
     // sin tocar sus seguimientos ya completados (que sí se acumulan sin
@@ -205,8 +202,7 @@ const MAX_COMPLETADOS_CLIENTE = 100;
 export const completadosPorCliente = query({
   args: { clienteId: v.id("clientes") },
   handler: async (ctx, { clienteId }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     const completados = await ctx.db
       .query("seguimientos")
