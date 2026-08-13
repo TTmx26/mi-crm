@@ -2,6 +2,7 @@ import { query, mutation, action, internalQuery, internalMutation } from "./_gen
 import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { createAccount, invalidateSessions } from "@convex-dev/auth/server";
+import type { Id } from "./_generated/dataModel";
 import { requirePropietaria } from "./authz";
 import { esEmailValido } from "./validation";
 
@@ -130,12 +131,14 @@ export const crearUsuario = action({
     await ctx.runMutation(internal.bootstrap.markEmailVerified, { email: emailCanonico });
 
     try {
-      await createAccount(ctx, {
+      const { user } = await createAccount(ctx, {
         provider: "password",
         account: { id: emailCanonico, secret: password },
         profile: { email: emailCanonico, name: nombre, role },
         shouldLinkViaEmail: true,
       });
+      // Contraseña temporal: obligar a fijar una propia en el primer login.
+      await ctx.runMutation(internal.equipo.marcarDebeCambiar, { id: user._id as Id<"users"> });
     } catch (err) {
       // Segunda defensa ante duplicado (carrera, o cuenta sin fila en users):
       // solo se traduce "already exists"; cualquier otro fallo se relanza sin
@@ -146,6 +149,16 @@ export const crearUsuario = action({
       }
       throw err;
     }
+  },
+});
+
+// Marca a un usuario recién creado como "debe cambiar la contraseña temporal"
+// (HOP-14 follow-up). Interno: solo lo llama crearUsuario tras createAccount, ya
+// dentro de un flujo autorizado por la Dueña.
+export const marcarDebeCambiar = internalMutation({
+  args: { id: v.id("users") },
+  handler: async (ctx, { id }) => {
+    await ctx.db.patch("users", id, { debeCambiarContrasena: true });
   },
 });
 

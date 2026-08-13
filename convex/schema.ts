@@ -18,6 +18,11 @@ export default defineSchema({
     // (beforeSessionCreation en auth.ts) y toda función de datos lo rechaza
     // (convex/authz.ts). Su historial conserva la autoría (la fila no se borra).
     desactivadoEn: v.optional(v.number()),
+    // Cambio de contraseña forzado (HOP-14 follow-up): true = el usuario debe
+    // fijar una contraseña propia antes de usar la app. Lo pone `crearUsuario`
+    // al crear con contraseña temporal; lo limpia `cuenta.cambiarMiContrasena`.
+    // La barrera es la UI (interstitial en el gate del layout de /(app)).
+    debeCambiarContrasena: v.optional(v.boolean()),
     image: v.optional(v.string()),
     emailVerificationTime: v.optional(v.number()),
     phone: v.optional(v.string()),

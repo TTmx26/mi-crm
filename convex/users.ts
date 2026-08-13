@@ -8,7 +8,14 @@ export const viewer = query({
     // desactivada → el front trata ambos casos como "sin sesión".
     const user = await getActiveUser(ctx);
     if (!user) return null;
-    return { _id: user._id, name: user.name, email: user.email, role: user.role };
+    return {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      // El front lo usa para forzar el cambio de la contraseña temporal.
+      debeCambiarContrasena: user.debeCambiarContrasena === true,
+    };
   },
 });
 
