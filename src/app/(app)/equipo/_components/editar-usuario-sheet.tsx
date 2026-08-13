@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { Sheet } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { USER_ROL_LABEL, type UserRole } from "@/lib/user-rol";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
@@ -40,11 +41,19 @@ export function EditarUsuarioSheet({ open, onClose, usuario }: EditarUsuarioShee
 
 function EditarUsuarioForm({ usuario, onClose }: { usuario: EquipoMiembro; onClose: () => void }) {
   const editar = useMutation(api.equipo.editarUsuario);
+  const desactivar = useAction(api.equipo.desactivarUsuario);
+  const reactivar = useMutation(api.equipo.reactivarUsuario);
+  const currentUser = useCurrentUser();
 
   const [name, setName] = useState(usuario.name);
   const [role, setRole] = useState<UserRole>(usuario.role);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDesactivar, setConfirmDesactivar] = useState(false);
+  const [accessSubmitting, setAccessSubmitting] = useState(false);
+
+  // No se ofrece "Desactivar" sobre uno mismo (el backend igual lo bloquea).
+  const esUnoMismo = currentUser?._id === usuario._id;
 
   // Solo se habilita si hay algo que cambiar (y no vacío).
   const canSubmit =
@@ -69,6 +78,39 @@ function EditarUsuarioForm({ usuario, onClose }: { usuario: EquipoMiembro; onClo
           : "No se pudo guardar el usuario. Inténtalo de nuevo.",
       );
       setSubmitting(false);
+    }
+  }
+
+  async function handleDesactivar() {
+    setError(null);
+    setAccessSubmitting(true);
+    try {
+      await desactivar({ id: usuario._id });
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof ConvexError
+          ? String(err.data)
+          : "No se pudo desactivar el acceso. Inténtalo de nuevo.",
+      );
+      setAccessSubmitting(false);
+      setConfirmDesactivar(false);
+    }
+  }
+
+  async function handleReactivar() {
+    setError(null);
+    setAccessSubmitting(true);
+    try {
+      await reactivar({ id: usuario._id });
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof ConvexError
+          ? String(err.data)
+          : "No se pudo reactivar el acceso. Inténtalo de nuevo.",
+      );
+      setAccessSubmitting(false);
     }
   }
 
@@ -115,6 +157,53 @@ function EditarUsuarioForm({ usuario, onClose }: { usuario: EquipoMiembro; onClo
       <Button type="submit" className="w-full" disabled={!canSubmit} loading={submitting}>
         Guardar
       </Button>
+
+      {/* Zona de acceso: separada del formulario de edición. No aparece sobre la
+          propia cuenta (no auto-desactivarse). */}
+      {!esUnoMismo && (
+        <div className="mt-1 border-t border-border pt-4">
+          {usuario.activo ? (
+            confirmDesactivar ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-[13px] text-text-muted">
+                  Se cerrará su sesión y no podrá entrar hasta que lo reactives. Su historial se conserva.
+                </p>
+                <div className="flex gap-2">
+                  <Button type="button" variant="destructive" onClick={handleDesactivar} loading={accessSubmitting}>
+                    Sí, desactivar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setConfirmDesactivar(false)}
+                    disabled={accessSubmitting}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmDesactivar(true)}
+                className="text-sm font-medium text-error-text hover:underline"
+              >
+                Desactivar acceso
+              </button>
+            )
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={handleReactivar}
+              loading={accessSubmitting}
+            >
+              Reactivar acceso
+            </Button>
+          )}
+        </div>
+      )}
     </form>
   );
 }
