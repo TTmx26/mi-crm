@@ -13,6 +13,11 @@ export default defineSchema({
     name: v.string(),
     email: v.string(),
     role: v.union(v.literal("propietaria"), v.literal("comercial")),
+    // Desactivación reversible (HOP-14): ms epoch cuando se desactivó la cuenta,
+    // ausente = activa. Un desactivado no puede crear sesión
+    // (beforeSessionCreation en auth.ts) y toda función de datos lo rechaza
+    // (convex/authz.ts). Su historial conserva la autoría (la fila no se borra).
+    desactivadoEn: v.optional(v.number()),
     image: v.optional(v.string()),
     emailVerificationTime: v.optional(v.number()),
     phone: v.optional(v.string()),

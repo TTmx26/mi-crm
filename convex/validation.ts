@@ -10,3 +10,12 @@ export function esFechaValida(fecha: string): boolean {
   const date = new Date(`${fecha}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === fecha;
 }
+
+// Igual que esFechaValida: el validador de args garantiza que es string, no que
+// sea un email. Regex pragmático (no la RFC completa): exige `local@dominio.tld`
+// sin espacios y con al menos un punto en el dominio. El backend normaliza a
+// minúsculas antes de validar. Suficiente para el alta del panel (HOP-14); la
+// entregabilidad real no es objetivo aquí.
+export function esEmailValido(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}

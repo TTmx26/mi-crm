@@ -77,5 +77,20 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         role: profile.role as Doc<"users">["role"],
       });
     },
+
+    // Barrera central de la desactivación (HOP-14, M1): corre ANTES de crear
+    // la sesión en TODOS los flujos — Google recién enlazado, Google ya
+    // enlazado, contraseña (signIn) y reset-verification — así que un
+    // desactivado no obtiene sesión nueva sin importar el provider (a
+    // diferencia de createOrUpdateUser, que retorna antes para una cuenta ya
+    // enlazada y no vería el estado). Falla cerrado también si la fila no
+    // existe. invalidateSessions (al desactivar) cierra las sesiones vivas.
+    async beforeSessionCreation(genericCtx, { userId }) {
+      const ctx = genericCtx as unknown as MutationCtx;
+      const user = await ctx.db.get("users", userId);
+      if (!user || user.desactivadoEn !== undefined) {
+        throw new Error("Cuenta no disponible");
+      }
+    },
   },
 });

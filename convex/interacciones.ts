@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireActiveUserId } from "./authz";
 import { esFechaValida } from "./validation";
 
 // Tope defensivo, mismo criterio que MAX_PENDIENTES en seguimientos.ts.
@@ -9,8 +9,7 @@ const MAX_INTERACCIONES = 200;
 export const listarPorCliente = query({
   args: { clienteId: v.id("clientes") },
   handler: async (ctx, { clienteId }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) throw new Error("No autenticado");
+    await requireActiveUserId(ctx);
 
     // El índice compuesto ordena por fecha en la propia base de datos, así
     // `take` acota de verdad (no un `.collect()` seguido de sort en memoria).
@@ -49,8 +48,7 @@ export const crear = mutation({
     fecha: v.string(),
   },
   handler: async (ctx, args) => {
-    const autorId = await getAuthUserId(ctx);
-    if (autorId === null) throw new Error("No autenticado");
+    const autorId = await requireActiveUserId(ctx);
 
     const cliente = await ctx.db.get("clientes", args.clienteId);
     if (!cliente) throw new Error("Cliente no encontrado");
