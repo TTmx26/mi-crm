@@ -1,7 +1,7 @@
-import { query, mutation, action, internalQuery } from "./_generated/server";
+import { query, mutation, action, internalQuery, internalMutation } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
-import { createAccount } from "@convex-dev/auth/server";
+import { createAccount, invalidateSessions } from "@convex-dev/auth/server";
 import { requirePropietaria } from "./authz";
 import { esEmailValido } from "./validation";
 
@@ -182,5 +182,63 @@ export const editarUsuario = mutation({
     }
 
     await ctx.db.patch("users", id, { name: nombre, role });
+  },
+});
+
+// Marca a un usuario como desactivado (HOP-14, PR4). Hace autz + guardas de forma
+// atómica en una mutation; la action que la envuelve invalida las sesiones vivas.
+// Idempotente: si ya estaba desactivado no repisa el timestamp (pero la action
+// llama a invalidateSessions igual, para no dejar una sesión residual viva).
+export const marcarDesactivado = internalMutation({
+  args: { id: v.id("users") },
+  handler: async (ctx, { id }) => {
+    const actor = await requirePropietaria(ctx);
+    if (id === actor._id) {
+      throw new ConvexError("No puedes desactivar tu propia cuenta.");
+    }
+    const target = await ctx.db.get("users", id);
+    if (!target) throw new ConvexError("Usuario no encontrado.");
+    if (target.desactivadoEn !== undefined) return; // ya desactivado (idempotente)
+
+    // Misma guarda e idéntico criterio que editarUsuario: no dejar al negocio sin
+    // ninguna Dueña activa.
+    if (target.role === "propietaria") {
+      const propietariasActivas = (await ctx.db.query("users").collect()).filter(
+        (u) => u.role === "propietaria" && u.desactivadoEn === undefined,
+      );
+      if (propietariasActivas.length <= 1) {
+        throw new ConvexError("Debe quedar al menos una Dueña activa.");
+      }
+    }
+
+    await ctx.db.patch("users", id, { desactivadoEn: Date.now() });
+  },
+});
+
+// Desactiva el acceso de un usuario (HOP-14, PR4). Es una action porque además de
+// marcar la fila hay que invalidar las sesiones vivas (invalidateSessions exige
+// contexto de action). La barrera primaria es esta + beforeSessionCreation; los
+// helpers de authz son la defensa en profundidad por función.
+export const desactivarUsuario = action({
+  args: { id: v.id("users") },
+  handler: async (ctx, { id }) => {
+    await ctx.runMutation(internal.equipo.marcarDesactivado, { id });
+    // Siempre, aunque marcarDesactivado haya sido idempotente: cierra cualquier
+    // sesión viva residual del usuario.
+    await invalidateSessions(ctx, { userId: id });
+  },
+});
+
+// Devuelve el acceso a un usuario desactivado (HOP-14, PR4). Mutation simple: NO
+// revive sesiones antiguas —solo limpia desactivadoEn— así que la persona vuelve
+// a entrar con sus credenciales (estadoAcceso vuelve a "password").
+export const reactivarUsuario = mutation({
+  args: { id: v.id("users") },
+  handler: async (ctx, { id }) => {
+    await requirePropietaria(ctx);
+    const target = await ctx.db.get("users", id);
+    if (!target) throw new ConvexError("Usuario no encontrado.");
+    if (target.desactivadoEn === undefined) return; // ya activo
+    await ctx.db.patch("users", id, { desactivadoEn: undefined });
   },
 });
