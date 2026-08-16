@@ -27,19 +27,32 @@ export interface EditarUsuarioSheetProps {
   open: boolean;
   onClose: () => void;
   usuario: EquipoMiembro | null;
+  // Nº de propietarias activas en el equipo (lo calcula la página desde
+  // listarEquipo). Sirve para ocultar "Desactivar acceso" sobre la última Dueña.
+  propietariasActivas: number;
 }
 
-export function EditarUsuarioSheet({ open, onClose, usuario }: EditarUsuarioSheetProps) {
+export function EditarUsuarioSheet({ open, onClose, usuario, propietariasActivas }: EditarUsuarioSheetProps) {
   return (
     <Sheet open={open} onClose={onClose} title="Editar usuario">
       {/* Igual que otros sheets: el form solo se monta con `open`, así cada
           apertura arranca desde los valores del usuario elegido sin useEffect. */}
-      {open && usuario && <EditarUsuarioForm usuario={usuario} onClose={onClose} />}
+      {open && usuario && (
+        <EditarUsuarioForm usuario={usuario} onClose={onClose} propietariasActivas={propietariasActivas} />
+      )}
     </Sheet>
   );
 }
 
-function EditarUsuarioForm({ usuario, onClose }: { usuario: EquipoMiembro; onClose: () => void }) {
+function EditarUsuarioForm({
+  usuario,
+  onClose,
+  propietariasActivas,
+}: {
+  usuario: EquipoMiembro;
+  onClose: () => void;
+  propietariasActivas: number;
+}) {
   const editar = useMutation(api.equipo.editarUsuario);
   const desactivar = useAction(api.equipo.desactivarUsuario);
   const reactivar = useMutation(api.equipo.reactivarUsuario);
@@ -54,6 +67,12 @@ function EditarUsuarioForm({ usuario, onClose }: { usuario: EquipoMiembro; onClo
 
   // No se ofrece "Desactivar" sobre uno mismo (el backend igual lo bloquea).
   const esUnoMismo = currentUser?._id === usuario._id;
+  // Ni sobre la última Dueña activa (HOP-65): la regla es OCULTAR el botón, no
+  // solo deshabilitarlo. El backend sigue siendo la autoridad (marcarDesactivado
+  // lanza si se intenta por API). Reactivar no se ve afectado: un inactivo no
+  // cuenta como Dueña activa.
+  const esUltimaDuena =
+    usuario.role === "propietaria" && usuario.activo && propietariasActivas <= 1;
 
   // Solo se habilita si hay algo que cambiar (y no vacío).
   const canSubmit =
@@ -159,8 +178,10 @@ function EditarUsuarioForm({ usuario, onClose }: { usuario: EquipoMiembro; onClo
       </Button>
 
       {/* Zona de acceso: separada del formulario de edición. No aparece sobre la
-          propia cuenta (no auto-desactivarse). */}
-      {!esUnoMismo && (
+          propia cuenta (no auto-desactivarse) ni sobre la última Dueña activa
+          (HOP-65). esUltimaDuena implica activo, así que esto nunca oculta
+          "Reactivar" de un inactivo. */}
+      {!esUnoMismo && !esUltimaDuena && (
         <div className="mt-1 border-t border-border pt-4">
           {usuario.activo ? (
             confirmDesactivar ? (
