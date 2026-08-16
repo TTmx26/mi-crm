@@ -27,6 +27,8 @@ import { CLIENTE_CANAL_LABEL } from "@/lib/cliente-canal";
 import { INTERACCION_TIPO_LABEL, INTERACCION_TIPO_ICON } from "@/lib/interaccion-tipo";
 import { VENTA_ESTADO_LABEL, VENTA_ESTADO_BADGE_VARIANT } from "@/lib/venta-estado";
 import { FORMATO_IMPORTE } from "@/lib/moneda";
+import { hoyNegocioISO } from "@/lib/date";
+import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { EditarClienteSheet } from "./_components/editar-cliente-sheet";
 import { EditarVentaSheet } from "./_components/editar-venta-sheet";
@@ -86,6 +88,11 @@ export default function ClienteDetailPage() {
   const currentUser = useCurrentUser();
   const marcarHecho = useMutation(api.seguimientos.marcarHecho);
   const cambiarEstadoVenta = useMutation(api.ventas.cambiarEstado);
+
+  // "Hoy de negocio" (Europe/Madrid, coincide con el servidor) para resaltar los
+  // seguimientos pendientes atrasados (HOP-19). Se calcula una vez por render, no
+  // por fila. Atrasado = vence estrictamente antes de hoy (vencer hoy no cuenta).
+  const hoy = hoyNegocioISO();
 
   if (cliente === null) {
     notFound();
@@ -219,6 +226,7 @@ export default function ClienteDetailPage() {
             <div className="flex flex-col divide-y divide-border">
               {seguimientosPendientes.map((s) => {
                 const esMio = s.responsableId === currentUser?._id;
+                const atrasado = s.vence < hoy;
                 return (
                   <div key={s._id} className="flex items-center gap-3 p-4">
                     {esMio ? (
@@ -240,11 +248,16 @@ export default function ClienteDetailPage() {
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-text">{s.accion}</p>
-                      <p className="text-[13px] text-text-subtle">
+                      <p className={cn("text-[13px]", atrasado ? "text-error-text" : "text-text-subtle")}>
                         {FORMATO_FECHA_CORTA.format(new Date(`${s.vence}T00:00:00`))}
                         {!esMio && ` · Asignado a ${s.responsableNombre}`}
                       </p>
                     </div>
+                    {atrasado && (
+                      <Badge variant="error" className="shrink-0">
+                        Atrasado
+                      </Badge>
+                    )}
                   </div>
                 );
               })}
