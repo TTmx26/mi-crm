@@ -362,7 +362,7 @@ export default function ClienteDetailPage() {
                           <Badge variant={VENTA_ESTADO_BADGE_VARIANT[venta.estado]}>
                             {VENTA_ESTADO_LABEL[venta.estado]}
                           </Badge>
-                          <span className="text-sm font-medium text-text">
+                          <span data-mono className="text-sm font-medium text-text">
                             {FORMATO_IMPORTE.format(venta.importe)}
                           </span>
                         </div>

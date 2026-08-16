@@ -96,7 +96,7 @@ export default function VentasPage() {
             type="button"
             onClick={() => setFilter(item)}
             className={cn(
-              "h-9 flex-1 rounded-[4px] text-[13px] font-medium transition-colors duration-[150ms]",
+              "h-9 flex-1 rounded-sm text-[13px] font-medium transition-colors duration-[150ms]",
               filter === item ? "bg-primary-subtle text-primary" : "text-text-muted hover:bg-surface-2",
             )}
           >
