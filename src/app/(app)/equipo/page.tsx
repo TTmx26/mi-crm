@@ -26,6 +26,12 @@ export default function EquipoPage() {
   // el backend lanzaría) y se muestra el aviso de acceso restringido.
   const equipo = useQuery(api.equipo.listarEquipo, esPropietaria ? {} : "skip");
 
+  // Para ocultar "Desactivar acceso" sobre la última Dueña activa (HOP-65). Se
+  // calcula aquí porque la lista completa vive en esta página; el sheet solo
+  // recibe el conteo. 0 mientras carga (el sheet no se abre sin datos).
+  const propietariasActivas =
+    equipo?.filter((u) => u.role === "propietaria" && u.activo).length ?? 0;
+
   if (user === undefined) {
     return (
       <div>
@@ -108,6 +114,7 @@ export default function EquipoPage() {
         open={editando !== null}
         onClose={() => setEditando(null)}
         usuario={editando}
+        propietariasActivas={propietariasActivas}
       />
     </div>
   );
