@@ -6,7 +6,13 @@ import { Sheet } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CLIENTE_CANAL_LABEL, CLIENTE_CANALES, type ClienteCanalOrigen } from "@/lib/cliente-canal";
+import { CLIENTE_ESTADO_LABEL, type ClienteEstado } from "@/lib/cliente-estado";
+import { CLIENTE_PRIORIDAD_LABEL, type ClientePrioridad } from "@/lib/cliente-prioridad";
 import { cn } from "@/lib/utils";
+
+// Estado = siempre uno seleccionado (embudo). Prioridad = opcional (se puede quitar).
+const ESTADOS: ClienteEstado[] = ["nuevo_lead", "en_negociacion", "activo", "inactivo"];
+const PRIORIDADES: ClientePrioridad[] = ["alta", "media", "baja"];
 import { api } from "../../../../../../convex/_generated/api";
 import type { Doc } from "../../../../../../convex/_generated/dataModel";
 
@@ -41,6 +47,9 @@ function EditarClienteForm({ cliente, onClose }: EditarClienteFormProps) {
   const [telefono, setTelefono] = useState(cliente.telefono ?? "");
   const [email, setEmail] = useState(cliente.email ?? "");
   const [canalOrigen, setCanalOrigen] = useState<ClienteCanalOrigen | null>(cliente.canalOrigen ?? null);
+  // Estado nunca es null (radio): así el patch nunca lo borra por accidente.
+  const [estado, setEstado] = useState<ClienteEstado>(cliente.estado ?? "nuevo_lead");
+  const [prioridad, setPrioridad] = useState<ClientePrioridad | null>(cliente.prioridad ?? null);
   const [nota, setNota] = useState(cliente.nota ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +70,8 @@ function EditarClienteForm({ cliente, onClose }: EditarClienteFormProps) {
         telefono: telefono || undefined,
         email: email || undefined,
         canalOrigen: canalOrigen ?? undefined,
+        estado,
+        prioridad: prioridad ?? undefined,
         nota: nota || undefined,
       });
       setSubmitting(false);
@@ -129,6 +140,48 @@ function EditarClienteForm({ cliente, onClose }: EditarClienteFormProps) {
               )}
             >
               {CLIENTE_CANAL_LABEL[value]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-text">Estado</p>
+        <div className="flex flex-wrap gap-2">
+          {ESTADOS.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setEstado(value)}
+              className={cn(
+                "min-h-11 rounded-full border px-4 text-sm font-medium transition-colors duration-[150ms]",
+                estado === value
+                  ? "border-primary bg-primary-subtle text-primary"
+                  : "border-border-strong bg-surface text-text-muted hover:bg-surface-2",
+              )}
+            >
+              {CLIENTE_ESTADO_LABEL[value]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-text">Prioridad</p>
+        <div className="flex flex-wrap gap-2">
+          {PRIORIDADES.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setPrioridad(prioridad === value ? null : value)}
+              className={cn(
+                "min-h-11 rounded-full border px-4 text-sm font-medium transition-colors duration-[150ms]",
+                prioridad === value
+                  ? "border-primary bg-primary-subtle text-primary"
+                  : "border-border-strong bg-surface text-text-muted hover:bg-surface-2",
+              )}
+            >
+              {CLIENTE_PRIORIDAD_LABEL[value]}
             </button>
           ))}
         </div>
