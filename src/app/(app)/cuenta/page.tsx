@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 // PUNTO DE INTEGRACIÓN: `updateProfile` / `changePassword` llegarán cuando
@@ -49,6 +50,13 @@ export default function CuentaPage() {
               </>
             )
           )}
+        </CardBody>
+      </Card>
+
+      <Card className="mb-4">
+        <CardBody className="flex flex-col gap-2.5">
+          <p className="text-sm font-medium text-text">Tema</p>
+          <ThemeToggle />
         </CardBody>
       </Card>
 
