@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { ListPlus, MessageSquarePlus, TrendingUp, UserPlus, CalendarCheck } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -14,6 +15,7 @@ import { UndoToast } from "./_components/undo-toast";
 import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
 import { ProgramarSeguimientoSheet } from "@/components/seguimientos/programar-seguimiento-sheet";
 import { RegistrarVentaSheet } from "@/components/ventas/registrar-venta-sheet";
+import { NuevoClienteSheet } from "../clientes/_components/nuevo-cliente-sheet";
 import { todayISO } from "@/lib/date";
 import { api } from "../../../../convex/_generated/api";
 import type { SeguimientoParaHoy } from "../../../../convex/seguimientos";
@@ -54,9 +56,11 @@ export default function HoyPage() {
 
   const data = useQuery(api.seguimientos.paraHoy, queryArgs);
 
+  const router = useRouter();
   const [interaccionOpen, setInteraccionOpen] = useState(false);
   const [seguimientoOpen, setSeguimientoOpen] = useState(false);
   const [ventaOpen, setVentaOpen] = useState(false);
+  const [clienteOpen, setClienteOpen] = useState(false);
   const [pendingUndo, setPendingUndo] = useState<PendingUndo | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -129,7 +133,7 @@ export default function HoyPage() {
                   ? () => setInteraccionOpen(true)
                   : label === "Registrar venta"
                     ? () => setVentaOpen(true)
-                    : undefined
+                    : () => setClienteOpen(true)
             }
             className="flex flex-col items-center gap-2 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition-colors duration-[150ms] hover:bg-surface-2"
           >
@@ -212,6 +216,11 @@ export default function HoyPage() {
       <AnotarInteraccionSheet open={interaccionOpen} onClose={() => setInteraccionOpen(false)} />
       <ProgramarSeguimientoSheet open={seguimientoOpen} onClose={() => setSeguimientoOpen(false)} />
       <RegistrarVentaSheet open={ventaOpen} onClose={() => setVentaOpen(false)} />
+      <NuevoClienteSheet
+        open={clienteOpen}
+        onClose={() => setClienteOpen(false)}
+        onCreated={(id) => router.push(`/clientes/${id}`)}
+      />
     </div>
   );
 }
