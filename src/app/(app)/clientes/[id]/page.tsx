@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
@@ -35,8 +35,9 @@ import { EditarVentaSheet } from "./_components/editar-venta-sheet";
 import { AnotarInteraccionSheet } from "@/components/interacciones/anotar-interaccion-sheet";
 import { ProgramarSeguimientoSheet } from "@/components/seguimientos/programar-seguimiento-sheet";
 import { RegistrarVentaSheet } from "@/components/ventas/registrar-venta-sheet";
+import { UndoToast } from "../../hoy/_components/undo-toast";
 import { api } from "../../../../../convex/_generated/api";
-import type { Doc } from "../../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../../../../convex/_generated/dataModel";
 
 const FORMATO_FECHA_ALTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" });
 const FORMATO_FECHA_CORTA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
@@ -87,7 +88,29 @@ export default function ClienteDetailPage() {
         });
   const currentUser = useCurrentUser();
   const marcarHecho = useMutation(api.seguimientos.marcarHecho);
+  const deshacerHecho = useMutation(api.seguimientos.deshacerHecho);
   const cambiarEstadoVenta = useMutation(api.ventas.cambiarEstado);
+
+  // Deshacer al completar (HOP-64): igual que en la pantalla Hoy. Completar es
+  // inmediato (la lista se actualiza sola por reactividad) y el toast ofrece
+  // deshacer ~3.8s; pasado ese tiempo, o al navegar, se da por definitivo.
+  const [pendingUndoId, setPendingUndoId] = useState<Id<"seguimientos"> | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(undoTimerRef.current), []);
+
+  function handleDone(seguimientoId: Id<"seguimientos">) {
+    setPendingUndoId(seguimientoId);
+    void marcarHecho({ id: seguimientoId });
+    clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setPendingUndoId(null), 3800);
+  }
+
+  function handleUndo() {
+    if (!pendingUndoId) return;
+    void deshacerHecho({ id: pendingUndoId });
+    setPendingUndoId(null);
+    clearTimeout(undoTimerRef.current);
+  }
 
   // "Hoy de negocio" (Europe/Madrid, coincide con el servidor) para resaltar los
   // seguimientos pendientes atrasados (HOP-19). Se calcula una vez por render, no
@@ -233,7 +256,7 @@ export default function ClienteDetailPage() {
                       <button
                         type="button"
                         aria-label="Marcar como hecho"
-                        onClick={() => void marcarHecho({ id: s._id })}
+                        onClick={() => handleDone(s._id)}
                         className="flex size-11 shrink-0 items-center justify-center"
                       >
                         <span
@@ -412,6 +435,8 @@ export default function ClienteDetailPage() {
         </>
       )}
       {editingVenta && <EditarVentaSheet venta={editingVenta} onClose={() => setEditingVenta(null)} />}
+
+      {pendingUndoId && <UndoToast message="Seguimiento completado" onUndo={handleUndo} />}
     </div>
   );
 }
