@@ -60,10 +60,9 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
       <div className="flex h-full items-end justify-center md:items-center">
         <div
           className={cn(
-            "w-full rounded-t-2xl bg-surface shadow-lg md:w-[480px] md:rounded-xl",
+            "sheet-panel w-full rounded-t-2xl bg-surface shadow-lg md:w-[480px] md:rounded-xl",
             className,
           )}
-          style={{ animation: "vibe-slide-up 200ms var(--ease-standard)" }}
         >
           <div className="flex items-center justify-between border-b border-border p-4">
             <h2 id={titleId} className="text-lg font-semibold text-text">

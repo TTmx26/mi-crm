@@ -251,3 +251,26 @@
     opacity: 1;
   }
 }
+
+@keyframes vibe-fade-scale {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Panel del overlay (Sheet): en móvil sube desde abajo (bottom sheet); en
+   escritorio es un modal centrado que aparece con fade+scale, no slide-up
+   (HOP-62, fidelidad con el prototipo). */
+.sheet-panel {
+  animation: vibe-slide-up 200ms var(--ease-standard);
+}
+@media (min-width: 768px) {
+  .sheet-panel {
+    animation: vibe-fade-scale 150ms var(--ease-standard);
+  }
+}
