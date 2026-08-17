@@ -6,11 +6,17 @@ import { requireActiveUserId } from "./authz";
 // clientes), pero igual se exige sesión — misma defensa en profundidad que
 // seguimientos.ts, ya que src/proxy.ts es solo la conveniencia de UX, no la
 // barrera real.
+// Tope defensivo: los clientes se acumulan sin límite con el tiempo (a
+// diferencia de otras listas, nunca "salen" de este filtro). Mismo criterio que
+// MAX_VENTAS_GLOBAL/MAX_INTERACCIONES. Holgado para el tamaño de negocio del MVP;
+// si hiciera falta más, tocaría paginar (fuera de alcance).
+const MAX_CLIENTES = 1000;
+
 export const listar = query({
   args: {},
   handler: async (ctx) => {
     await requireActiveUserId(ctx);
-    return await ctx.db.query("clientes").order("desc").collect();
+    return await ctx.db.query("clientes").order("desc").take(MAX_CLIENTES);
   },
 });
 
@@ -63,10 +69,11 @@ export const crear = mutation({
   },
 });
 
-// No toca `estado` ni `prioridad`: HOP-18 solo cubre datos de contacto. Los
-// campos aquí siempre llegan de un `_id` ya devuelto por `obtener` (nunca
-// tecleado a mano), así que sí se puede exigir `v.id` en vez del `v.string()`
-// + `normalizeId` que usa `obtener`.
+// Además de los datos de contacto, permite mover el cliente por el embudo
+// (`estado`) y cambiar su `prioridad` — antes ninguno de los dos se podía editar
+// tras el alta. Los campos aquí siempre llegan de un `_id` ya devuelto por
+// `obtener` (nunca tecleado a mano), así que sí se puede exigir `v.id` en vez del
+// `v.string()` + `normalizeId` que usa `obtener`.
 export const editar = mutation({
   args: {
     id: v.id("clientes"),
@@ -77,6 +84,15 @@ export const editar = mutation({
     canalOrigen: v.optional(
       v.union(v.literal("web"), v.literal("redes"), v.literal("email"), v.literal("whatsapp")),
     ),
+    estado: v.optional(
+      v.union(
+        v.literal("nuevo_lead"),
+        v.literal("en_negociacion"),
+        v.literal("activo"),
+        v.literal("inactivo"),
+      ),
+    ),
+    prioridad: v.optional(v.union(v.literal("alta"), v.literal("media"), v.literal("baja"))),
     nota: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -97,6 +113,8 @@ export const editar = mutation({
       telefono,
       email,
       canalOrigen: args.canalOrigen,
+      estado: args.estado,
+      prioridad: args.prioridad,
       nota: args.nota?.trim() || undefined,
     });
   },
