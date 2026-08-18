@@ -123,7 +123,7 @@ function RegistrarVentaForm({ onClose, clienteId }: RegistrarVentaFormProps) {
       />
 
       <Input
-        label="Importe (€)"
+        label="Importe ($)"
         type="number"
         inputMode="decimal"
         step="0.01"
