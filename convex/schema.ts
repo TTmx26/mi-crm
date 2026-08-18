@@ -61,7 +61,6 @@ export default defineSchema({
     responsableId: v.id("users"),
   })
     .index("by_cliente", ["clienteId"])
-    .index("by_vence", ["vence"])
     .index("by_responsable_estado_vence", ["responsableId", "hecho", "vence"])
     // Igual que by_responsable_estado_vence pero por cliente: permite traer
     // los pendientes de un cliente ya acotados por la base de datos (sin
@@ -88,7 +87,6 @@ export default defineSchema({
     fecha: v.string(), // "YYYY-MM-DD"
     autorId: v.id("users"),
   })
-    .index("by_cliente", ["clienteId"])
     // Permite traer el historial de un cliente ya ordenado y acotado por la
     // propia base de datos (`.order("desc").take(N)`), en vez de un
     // `.collect()` completo seguido de un sort en memoria.
@@ -113,8 +111,6 @@ export default defineSchema({
     fecha: v.string(), // "YYYY-MM-DD"
     autorId: v.id("users"),
   })
-    .index("by_cliente", ["clienteId"])
-    .index("by_estado", ["estado"])
     // Permite traer las ventas de un cliente ya ordenadas y acotadas por la
     // propia base de datos (mismo motivo que by_cliente_fecha en interacciones).
     .index("by_cliente_fecha", ["clienteId", "fecha"])
