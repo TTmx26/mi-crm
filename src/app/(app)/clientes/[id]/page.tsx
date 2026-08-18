@@ -170,7 +170,7 @@ export default function ClienteDetailPage() {
             </div>
 
             <div className="mt-4 flex flex-col gap-1 border-t border-border pt-4">
-              {cliente.telefono ? (
+              {cliente.telefono && (
                 <a
                   href={`tel:${cliente.telefono}`}
                   className="flex items-center gap-2 py-1.5 text-sm text-text hover:text-primary"
@@ -178,13 +178,8 @@ export default function ClienteDetailPage() {
                   <Phone size={16} strokeWidth={1.5} aria-hidden />
                   {cliente.telefono}
                 </a>
-              ) : (
-                <p className="flex items-center gap-2 py-1.5 text-sm text-text-muted">
-                  <Phone size={16} strokeWidth={1.5} aria-hidden />
-                  Sin teléfono
-                </p>
               )}
-              {cliente.email ? (
+              {cliente.email && (
                 <a
                   href={`mailto:${cliente.email}`}
                   className="flex items-center gap-2 py-1.5 text-sm text-text hover:text-primary"
@@ -192,11 +187,6 @@ export default function ClienteDetailPage() {
                   <Mail size={16} strokeWidth={1.5} aria-hidden />
                   {cliente.email}
                 </a>
-              ) : (
-                <p className="flex items-center gap-2 py-1.5 text-sm text-text-muted">
-                  <Mail size={16} strokeWidth={1.5} aria-hidden />
-                  Sin email
-                </p>
               )}
               {cliente.canalOrigen && (
                 <p className="py-1.5 text-sm text-text-muted">

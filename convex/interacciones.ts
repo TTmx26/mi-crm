@@ -41,6 +41,7 @@ export const crear = mutation({
     tipo: v.union(
       v.literal("llamada"),
       v.literal("email"),
+      v.literal("reunion"),
       v.literal("whatsapp"),
       v.literal("en_persona"),
     ),

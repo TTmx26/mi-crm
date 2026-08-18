@@ -77,7 +77,13 @@ export default defineSchema({
 
   interacciones: defineTable({
     clienteId: v.id("clientes"),
-    tipo: v.union(v.literal("llamada"), v.literal("email"), v.literal("whatsapp"), v.literal("en_persona")),
+    tipo: v.union(
+      v.literal("llamada"),
+      v.literal("email"),
+      v.literal("reunion"),
+      v.literal("whatsapp"),
+      v.literal("en_persona"),
+    ),
     texto: v.string(),
     fecha: v.string(), // "YYYY-MM-DD"
     autorId: v.id("users"),
